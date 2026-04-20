@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ String Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7080a0; --dim:#2e3a52;
+  --blue:#79c0ff; --green:#4ade80; --amber:#fbbd23;
+  --red:#f87171; --purple:#c084fc; --cyan:#67e8f9; --orange:#fb923c;
+  --cell-default-bg:#131c2e; --cell-default-bd:#1e2d47;
+  --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
+  --r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:12px 24px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px;flex-wrap:wrap}
+.header-left{display:flex;align-items:center;gap:14px}
+header h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
+header p{font-size:12px;color:var(--muted);font-family:var(--code)}
+
+/* Mode toggle */
+.mode-toggle{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:6px;overflow:hidden}
+.mode-btn{padding:6px 14px;font-size:12px;font-weight:500;font-family:var(--code);background:none;border:none;color:var(--muted);cursor:pointer;transition:all .15s}
+.mode-btn.active{background:var(--s3);color:var(--text)}
+
+.layout{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0}
+
+/* ── LEFT CONTROLS ── */
+.left{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.phead{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+.str-input-wrap{padding:14px}
+.str-input-label{font-size:11px;color:var(--muted);font-family:var(--code);margin-bottom:6px}
+.str-input{width:100%;font-family:var(--code);font-size:14px;background:#080b10;border:1px solid var(--border2);border-radius:6px;padding:9px 12px;color:var(--text);outline:none;letter-spacing:.04em}
+.str-input:focus{border-color:var(--blue)}
+.str-meta{display:flex;gap:12px;margin-top:8px;font-size:11px;font-family:var(--code)}
+.str-meta span{color:var(--dim)}
+.str-meta b{color:var(--blue)}
+
+.ops-section{padding:12px 14px;border-top:1px solid var(--border);flex:1}
+.ops-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.op-list{display:flex;flex-direction:column;gap:5px}
+
+.op-item{border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.op-header{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--s2);cursor:pointer;user-select:none}
+.op-header:hover{background:var(--s3)}
+.op-name{font-size:12px;font-weight:600;font-family:var(--code)}
+.op-chevron{font-size:10px;color:var(--dim);transition:transform .15s}
+.op-item.open .op-chevron{transform:rotate(180deg)}
+.op-body{display:none;padding:10px;background:var(--s1);border-top:1px solid var(--border)}
+.op-item.open .op-body{display:block}
+
+.field-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.field-row:last-child{margin-bottom:0}
+.field-label{font-size:11px;color:var(--muted);font-family:var(--code);min-width:32px;flex-shrink:0}
+input[type=text],input[type=number]{font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);outline:none;width:100%}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--blue)}
+input[type=number]{width:60px;flex-shrink:0}
+.op-desc{font-size:11px;color:var(--dim);font-family:var(--code);margin-bottom:8px;line-height:1.5}
+
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:5px 12px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
+button:hover{background:var(--border2)}
+button:active{transform:scale(.97)}
+.run-btn{width:100%;margin-top:6px;justify-content:center}
+
+/* op accent colors */
+.op-find   .op-name{color:var(--amber)}
+.op-substr .op-name{color:var(--cyan)}
+.op-insert .op-name{color:var(--green)}
+.op-erase  .op-name{color:var(--red)}
+.op-replace .op-name{color:var(--purple)}
+.op-concat .op-name{color:var(--orange)}
+.op-find   .run-btn{border-color:var(--amber);color:var(--amber);background:rgba(251,189,35,.08)}
+.op-substr .run-btn{border-color:var(--cyan);color:var(--cyan);background:rgba(103,232,249,.08)}
+.op-insert .run-btn{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.08)}
+.op-erase  .run-btn{border-color:var(--red);color:var(--red);background:rgba(248,113,113,.08)}
+.op-replace .run-btn{border-color:var(--purple);color:var(--purple);background:rgba(192,132,252,.08)}
+.op-concat .run-btn{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.08)}
+
+/* ── RIGHT VIZ ── */
+.right{padding:20px 24px;overflow:auto;background:var(--bg);display:flex;flex-direction:column;gap:20px}
+
+/* String object box */
+.obj-wrap{}
+.region-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.region-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.str-object{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}
+.str-obj-header{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;font-family:var(--code);color:var(--muted)}
+.str-obj-fields{display:grid;grid-template-columns:repeat(3,1fr)}
+.str-obj-field{padding:10px 14px;border-right:1px solid var(--border)}
+.str-obj-field:last-child{border-right:none}
+.sof-label{font-size:9px;color:var(--dim);font-family:var(--code);margin-bottom:2px;text-transform:uppercase;letter-spacing:.08em}
+.sof-name{font-size:11px;font-weight:600;font-family:var(--code);color:var(--muted);margin-bottom:3px}
+.sof-val{font-size:14px;font-weight:600;font-family:var(--code);transition:color .3s}
+
+/* SSO indicator */
+.sso-bar{padding:7px 14px;border-top:1px solid var(--border);font-size:11px;font-family:var(--code);display:flex;align-items:center;gap:8px}
+.sso-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Cell strip */
+.cells-wrap{}
+.cells-scroll{overflow-x:auto;padding-bottom:4px}
+.cells-strip{display:flex;gap:4px;align-items:flex-end;min-height:130px;padding:8px 4px 4px}
+
+.cell{
+  flex-shrink:0;width:54px;
+  display:flex;flex-direction:column;align-items:center;
+  border-radius:6px;border:1px solid var(--cell-default-bd);
+  background:var(--cell-default-bg);
+  transition:all .25s ease;position:relative;
+  overflow:visible;
+}
+.cell.highlight{border-color:var(--amber);background:rgba(251,189,35,.12)}
+.cell.highlight-substr{border-color:var(--cyan);background:rgba(103,232,249,.1)}
+.cell.highlight-new{border-color:var(--green);background:rgba(74,222,128,.1);animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+.cell.highlight-erase{border-color:var(--red);background:rgba(248,113,113,.1)}
+.cell.highlight-replace{border-color:var(--purple);background:rgba(192,132,252,.1)}
+.cell.null-cell{border-color:#2a3a2a;background:#0d150d}
+@keyframes popIn{0%{transform:scale(0) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+.cell.shake{animation:shake .35s ease}
+
+.cell-ascii{font-size:9px;font-family:var(--code);color:var(--dim);padding:5px 0 2px;width:100%;text-align:center;border-bottom:1px solid var(--border)}
+.cell-char{font-size:20px;font-weight:600;font-family:var(--code);padding:6px 0 4px;color:var(--text)}
+.cell-char.null-char{font-size:11px;color:#3a6a3a;padding:10px 0}
+.cell-idx{font-size:9px;font-family:var(--code);color:var(--dim);padding:2px 0 5px}
+.cell-idx.highlighted{color:var(--amber);font-weight:600}
+
+/* C-string mode null terminator label */
+.null-label{font-size:9px;color:#3a6a3a;font-family:var(--code);text-align:center;margin-top:3px}
+
+/* Result panel */
+.result-box{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);
+  overflow:hidden;min-height:80px;
+  transition:border-color .3s;
+}
+.result-box.has-result{border-color:var(--border2)}
+.result-header{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;font-family:var(--code);color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.result-op-name{font-weight:600}
+.result-body{padding:14px}
+
+.result-cells-wrap{margin-bottom:10px}
+.result-msg{font-size:12px;font-family:var(--code);color:var(--muted);line-height:1.6}
+.result-msg .hl{font-weight:600}
+.result-msg .hl-found{color:var(--amber)}
+.result-msg .hl-blue{color:var(--blue)}
+.result-msg .hl-green{color:var(--green)}
+.result-msg .hl-red{color:var(--red)}
+.result-msg .hl-cyan{color:var(--cyan)}
+.result-msg .hl-purple{color:var(--purple)}
+.result-msg .hl-orange{color:var(--orange)}
+
+/* C-string info box */
+.cstr-info{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:6px;padding:12px 14px;font-size:12px;font-family:var(--code);line-height:1.7;color:var(--muted)}
+.cstr-info .hl{color:var(--green);font-weight:600}
+.cstr-info .warn{color:var(--amber)}
+.cstr-danger{background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.15);border-radius:6px;padding:12px 14px;font-size:12px;font-family:var(--code);line-height:1.7;color:var(--muted);margin-top:10px}
+.cstr-danger .hl{color:var(--red);font-weight:600}
+
+/* Log */
+.log-strip{display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto}
+.log-entry{font-size:11px;font-family:var(--code);color:var(--muted);padding:5px 10px;background:var(--s2);border-radius:4px;border-left:3px solid var(--border2);animation:logIn .15s ease}
+@keyframes logIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.log-find{border-left-color:var(--amber)}
+.log-entry.log-substr{border-left-color:var(--cyan)}
+.log-entry.log-insert{border-left-color:var(--green)}
+.log-entry.log-erase{border-left-color:var(--red)}
+.log-entry.log-replace{border-left-color:var(--purple)}
+.log-entry.log-concat{border-left-color:var(--orange)}
+.log-entry.log-cstr{border-left-color:var(--green)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div>
+      <h1>C++ String Visualizer</h1>
+      <p>characters · indices · ASCII · operations</p>
+    </div>
+  </div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-cpp" onclick="setMode('cpp')">std::string</button>
+    <button class="mode-btn" id="btn-cstr" onclick="setMode('cstr')">C-string (char[])</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="phead">String Input</div>
+    <div class="str-input-wrap">
+      <div class="str-input-label">Type your string:</div>
+      <input class="str-input" id="str-input" type="text" value="Hello, World!" maxlength="40" oninput="onStrChange()"/>
+      <div class="str-meta">
+        <span>length: <b id="meta-len">13</b></span>
+        <span>capacity: <b id="meta-cap">13</b></span>
+        <span id="meta-sso-badge"></span>
+      </div>
+    </div>
+
+    <div class="ops-section">
+      <div class="ops-title">Operations</div>
+      <div class="op-list">
+
+        <!-- find -->
+        <div class="op-item op-find" id="op-find">
+          <div class="op-header" onclick="toggleOp('op-find')">
+            <span class="op-name">find()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Returns index of first match, or string::npos if not found.</div>
+            <div class="field-row"><span class="field-label">find:</span><input type="text" id="find-q" placeholder="World" value="World"/></div>
+            <button class="run-btn" onclick="runFind()">▶ run find()</button>
+          </div>
+        </div>
+
+        <!-- substr -->
+        <div class="op-item op-substr" id="op-substr">
+          <div class="op-header" onclick="toggleOp('op-substr')">
+            <span class="op-name">substr()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Returns a new string of len chars starting at pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="substr-pos" value="7" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="substr-len" value="5" min="1"/></div>
+            <button class="run-btn" onclick="runSubstr()">▶ run substr()</button>
+          </div>
+        </div>
+
+        <!-- insert -->
+        <div class="op-item op-insert" id="op-insert">
+          <div class="op-header" onclick="toggleOp('op-insert')">
+            <span class="op-name">insert()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Inserts str before position pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="insert-pos" value="5" min="0"/></div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="insert-str" value=" there" maxlength="20"/></div>
+            <button class="run-btn" onclick="runInsert()">▶ run insert()</button>
+          </div>
+        </div>
+
+        <!-- erase -->
+        <div class="op-item op-erase" id="op-erase">
+          <div class="op-header" onclick="toggleOp('op-erase')">
+            <span class="op-name">erase()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Removes len characters starting at pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="erase-pos" value="5" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="erase-len" value="7" min="1"/></div>
+            <button class="run-btn" onclick="runErase()">▶ run erase()</button>
+          </div>
+        </div>
+
+        <!-- replace -->
+        <div class="op-item op-replace" id="op-replace">
+          <div class="op-header" onclick="toggleOp('op-replace')">
+            <span class="op-name">replace()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Replaces len chars at pos with str.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="replace-pos" value="7" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="replace-len" value="5" min="1"/></div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="replace-str" value="C++" maxlength="20"/></div>
+            <button class="run-btn" onclick="runReplace()">▶ run replace()</button>
+          </div>
+        </div>
+
+        <!-- concat -->
+        <div class="op-item op-concat" id="op-concat">
+          <div class="op-header" onclick="toggleOp('op-concat')">
+            <span class="op-name">+= concat</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Appends str to the end of the string.</div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="concat-str" value=" 🎉" maxlength="20"/></div>
+            <button class="run-btn" onclick="runConcat()">▶ run +=</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right" id="right-panel">
+
+    <!-- Object box -->
+    <div class="obj-wrap">
+      <div class="region-label" id="obj-region-label">Stack — std::string object (32 bytes)</div>
+      <div class="str-object" id="str-object">
+        <div class="str-obj-header">
+          <span id="obj-type-label">std::string s = "Hello, World!";</span>
+          <span style="color:var(--dim)">main() frame</span>
+        </div>
+        <div class="str-obj-fields">
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name" id="field1-name">data*</div>
+            <div class="sof-val" id="field1-val" style="color:var(--blue);font-size:12px">0x3a001000</div>
+            <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)" id="field1-sub">→ heap buffer</div>
+          </div>
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name">size</div>
+            <div class="sof-val" id="sf-size" style="color:var(--green)">13</div>
+            <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)">chars used</div>
+          </div>
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name">capacity</div>
+            <div class="sof-val" id="sf-cap" style="color:var(--purple)">13</div>
+            <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)">slots allocated</div>
+          </div>
+        </div>
+        <div class="sso-bar" id="sso-bar">
+          <span class="sso-dot" id="sso-dot"></span>
+          <span id="sso-label" style="font-size:11px;font-family:var(--code)"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cell strip -->
+    <div class="cells-wrap">
+      <div class="region-label" id="cells-region-label">Character cells — each cell = 1 byte</div>
+      <div class="cells-scroll">
+        <div class="cells-strip" id="cells-strip"></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="result-box">
+      <div class="result-header">
+        <span>Result</span>
+        <span class="result-op-name" id="result-op-name" style="color:var(--muted)">run an operation to see output</span>
+      </div>
+      <div class="result-body" id="result-body">
+        <div class="result-msg" style="color:var(--dim)">// choose an operation from the left panel and hit run</div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div>
+      <div class="region-label">Operation log <button style="font-size:10px;padding:2px 8px;margin-left:8px;border-radius:3px" onclick="clearLog()">clear</button></div>
+      <div class="log-strip" id="log-strip"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── STATE ──────────────────────────────────────────────────────────
+let currentStr = 'Hello, World!';
+let mode = 'cpp'; // 'cpp' | 'cstr'
+const SSO_THRESHOLD = 15;
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── MODE SWITCH ───────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-cpp').classList.toggle('active', m==='cpp');
+  document.getElementById('btn-cstr').classList.toggle('active', m==='cstr');
+  renderAll();
+  if(m === 'cstr') {
+    showCstrResult();
+    addLog('Switched to C-string mode — null terminator \\0 now visible', 'cstr');
+  } else {
+    clearResult();
+    addLog('Switched to std::string mode', 'cstr');
+  }
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────────
+function renderAll(highlightConfig={}) {
+  renderObject();
+  renderCells(highlightConfig);
+  renderMeta();
+}
+
+function renderObject() {
+  const s = currentStr;
+  const len = [...s].length;
+  const isSSO = len <= SSO_THRESHOLD;
+
+  if(mode === 'cpp') {
+    document.getElementById('obj-region-label').textContent = 'Stack — std::string object (32 bytes)';
+    document.getElementById('obj-type-label').textContent = `std::string s = "${s.length > 20 ? s.slice(0,18)+'…' : s}";`;
+    document.getElementById('field1-name').textContent = 'data*';
+    document.getElementById('field1-sub').textContent = isSSO ? '→ internal buffer (SSO)' : '→ heap buffer';
+    document.getElementById('field1-val').textContent = isSSO ? 'local buf' : '0x3a001000';
+    document.getElementById('field1-val').style.color = isSSO ? 'var(--green)' : 'var(--blue)';
+  } else {
+    document.getElementById('obj-region-label').textContent = 'Stack — char[] array (fixed size)';
+    document.getElementById('obj-type-label').textContent = `char s[${len+1}] = "${s.length > 18 ? s.slice(0,16)+'…' : s}";`;
+    document.getElementById('field1-name').textContent = 'base addr';
+    document.getElementById('field1-sub').textContent = '→ first char in array';
+    document.getElementById('field1-val').textContent = '0x7FFF1020';
+    document.getElementById('field1-val').style.color = 'var(--blue)';
+  }
+
+  document.getElementById('sf-size').textContent = len;
+  const cap = mode === 'cpp' ? Math.max(len, 15) : len + 1;
+  document.getElementById('sf-cap').textContent = cap;
+  document.getElementById('meta-cap').textContent = cap;
+
+  // SSO bar
+  const bar = document.getElementById('sso-bar');
+  const dot = document.getElementById('sso-dot');
+  const lbl = document.getElementById('sso-label');
+  if(mode === 'cpp') {
+    bar.style.display = 'flex';
+    dot.style.background = isSSO ? 'var(--green)' : 'var(--amber)';
+    lbl.innerHTML = isSSO
+      ? `<span style="color:var(--green)">SSO active</span> — string fits in the object itself (≤${SSO_THRESHOLD} chars). <span style="color:var(--dim)">No heap allocation!</span>`
+      : `<span style="color:var(--amber)">Heap allocated</span> — string exceeds SSO limit (${SSO_THRESHOLD} chars). <span style="color:var(--dim)">data* points to heap buffer.</span>`;
+  } else {
+    bar.style.display = 'flex';
+    dot.style.background = 'var(--red)';
+    lbl.innerHTML = `<span style="color:var(--red)">No SSO, no auto-resize</span> — fixed size array. <span style="color:var(--dim)">Buffer overflow = undefined behavior.</span>`;
+  }
+}
+
+function renderCells(highlightConfig={}) {
+  const strip = document.getElementById('cells-strip');
+  const chars = [...currentStr];
+  const { type, start, end, newIndices } = highlightConfig;
+
+  let html = '';
+  for(let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const code = ch.codePointAt(0);
+    const isHighlight     = type==='find'    && i>=start && i<=end;
+    const isSubstr        = type==='substr'  && i>=start && i<=end;
+    const isErase         = type==='erase'   && i>=start && i<=end;
+    const isReplace       = type==='replace' && i>=start && i<=end;
+    const isNew           = newIndices && newIndices.includes(i);
+    let cls = 'cell';
+    if(isHighlight) cls += ' highlight';
+    else if(isSubstr) cls += ' highlight-substr';
+    else if(isErase) cls += ' highlight-erase';
+    else if(isReplace) cls += ' highlight-replace';
+    if(isNew) cls += ' highlight-new';
+
+    const displayAscii = code <= 127 ? code : '…';
+    const displayChar = ch === ' ' ? '·' : esc(ch);
+    const idxCls = isHighlight ? 'cell-idx highlighted' : 'cell-idx';
+
+    html += `<div class="${cls}">
+      <div class="cell-ascii">${displayAscii}</div>
+      <div class="cell-char">${displayChar}</div>
+      <div class="${idxCls}">[${i}]</div>
+    </div>`;
+  }
+
+  // Null terminator in C-string mode
+  if(mode === 'cstr') {
+    html += `<div class="cell null-cell">
+      <div class="cell-ascii">0</div>
+      <div class="cell-char null-char">\\0</div>
+      <div class="cell-idx">[${chars.length}]</div>
+    </div>`;
+  }
+
+  strip.innerHTML = html;
+
+  // Update region label
+  const extra = mode === 'cstr' ? ` + \\0 terminator = ${chars.length+1} bytes total` : ` = ${chars.length} bytes`;
+  document.getElementById('cells-region-label').textContent = `Character cells — ${chars.length} chars${extra}`;
+}
+
+function renderMeta() {
+  document.getElementById('meta-len').textContent = [...currentStr].length;
+  document.getElementById('sf-size').textContent = [...currentStr].length;
+}
+
+// ── OPERATIONS ────────────────────────────────────────────────────
+function runFind() {
+  const q = document.getElementById('find-q').value;
+  if(!q){ flashShake('find-q'); return; }
+  const idx = currentStr.indexOf(q);
+  if(idx === -1) {
+    showResult('find()', `
+      <div class="result-msg">
+        <span class="hl hl-red">Not found</span> — <code>"${esc(q)}"</code> is not in the string.<br>
+        Returns <span class="hl hl-red">string::npos</span> (which equals <code>size_t(-1)</code> = 18446744073709551615 on 64-bit).
+      </div>`, 'find');
+    addLog(`find("${q}") → string::npos (not found)`, 'find');
+    renderAll();
+  } else {
+    const end = idx + [...q].length - 1;
+    renderAll({ type:'find', start:idx, end });
+    showResult('find()', `
+      <div class="result-msg">
+        Found <span class="hl hl-found">"${esc(q)}"</span> starting at index <span class="hl hl-found">[${idx}]</span>, ending at [${end}].<br>
+        <span style="color:var(--dim)">s.find("${esc(q)}") → ${idx}</span><br><br>
+        <span style="color:var(--dim)">Tip: check with </span><code>if (idx != string::npos)</code><span style="color:var(--dim)"> before using the index.</span>
+      </div>`, 'find');
+    addLog(`find("${q}") → index [${idx}]`, 'find');
+  }
+}
+
+function runSubstr() {
+  const pos = clamp(parseInt(document.getElementById('substr-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('substr-len').value)||1, 1, currentStr.length-pos);
+  const result = currentStr.substr(pos, len);
+  const end = pos + len - 1;
+  renderAll({ type:'substr', start:pos, end });
+  showResult('substr()', `
+    <div class="result-msg" style="margin-bottom:10px">
+      <span class="hl hl-cyan">s.substr(${pos}, ${len})</span> → <span class="hl hl-cyan">"${esc(result)}"</span><br>
+      Starts at index [${pos}], copies ${len} character${len>1?'s':''}.
+    </div>
+    <div class="cells-scroll"><div class="cells-strip" id="result-cells" style="min-height:110px">${buildResultCells(result,'highlight-substr')}</div></div>`, 'substr');
+  addLog(`substr(${pos}, ${len}) → "${result}"`, 'substr');
+}
+
+function runInsert() {
+  const pos = clamp(parseInt(document.getElementById('insert-pos').value)||0, 0, currentStr.length);
+  const ins = document.getElementById('insert-str').value;
+  if(!ins){ flashShake('insert-str'); return; }
+  const before = currentStr;
+  currentStr = before.slice(0, pos) + ins + before.slice(pos);
+  const newIndices = Array.from({length:[...ins].length}, (_,i)=>pos+i);
+  renderAll({ newIndices });
+  showResult('insert()', `
+    <div class="result-msg">
+      Inserted <span class="hl hl-green">"${esc(ins)}"</span> at index [${pos}].<br>
+      <span style="color:var(--dim)">"${esc(before)}"</span><br>
+      → <span class="hl hl-green">"${esc(currentStr)}"</span><br><br>
+      <span style="color:var(--dim)">Note: all characters from [${pos}] onward shifted right by ${[...ins].length}.</span>
+    </div>`, 'insert');
+  addLog(`insert(${pos}, "${ins}") → "${currentStr}"`, 'insert');
+  syncInput();
+}
+
+function runErase() {
+  const pos = clamp(parseInt(document.getElementById('erase-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('erase-len').value)||1, 1, currentStr.length-pos);
+  const erased = currentStr.substr(pos, len);
+  renderAll({ type:'erase', start:pos, end:pos+len-1 });
+  setTimeout(() => {
+    const before = currentStr;
+    currentStr = currentStr.slice(0, pos) + currentStr.slice(pos+len);
+    renderAll();
+    showResult('erase()', `
+      <div class="result-msg">
+        Removed <span class="hl hl-red">"${esc(erased)}"</span> (${len} char${len>1?'s':''} at [${pos}]).<br>
+        <span style="color:var(--dim)">"${esc(before)}"</span><br>
+        → <span class="hl hl-red">"${esc(currentStr)}"</span><br><br>
+        <span style="color:var(--dim)">Characters from [${pos+len}] onward shifted left by ${len}.</span>
+      </div>`, 'erase');
+    addLog(`erase(${pos}, ${len}) → "${currentStr}"`, 'erase');
+    syncInput();
+  }, 450);
+}
+
+function runReplace() {
+  const pos = clamp(parseInt(document.getElementById('replace-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('replace-len').value)||1, 1, currentStr.length-pos);
+  const rep = document.getElementById('replace-str').value;
+  if(rep === ''){ flashShake('replace-str'); return; }
+  const before = currentStr;
+  const removed = currentStr.substr(pos, len);
+  renderAll({ type:'replace', start:pos, end:pos+len-1 });
+  setTimeout(() => {
+    currentStr = currentStr.slice(0, pos) + rep + currentStr.slice(pos+len);
+    const newIndices = Array.from({length:[...rep].length}, (_,i)=>pos+i);
+    renderAll({ newIndices });
+    showResult('replace()', `
+      <div class="result-msg">
+        Replaced <span class="hl hl-red">"${esc(removed)}"</span> (${len} chars at [${pos}]) with <span class="hl hl-purple">"${esc(rep)}"</span>.<br>
+        <span style="color:var(--dim)">"${esc(before)}"</span><br>
+        → <span class="hl hl-purple">"${esc(currentStr)}"</span>
+      </div>`, 'replace');
+    addLog(`replace(${pos}, ${len}, "${rep}") → "${currentStr}"`, 'replace');
+    syncInput();
+  }, 400);
+}
+
+function runConcat() {
+  const app = document.getElementById('concat-str').value;
+  if(!app){ flashShake('concat-str'); return; }
+  const before = currentStr;
+  const startIdx = [...currentStr].length;
+  currentStr = currentStr + app;
+  const newIndices = Array.from({length:[...app].length}, (_,i)=>startIdx+i);
+  renderAll({ newIndices });
+  showResult('+= concat', `
+    <div class="result-msg">
+      Appended <span class="hl hl-orange">"${esc(app)}"</span> to the end.<br>
+      <span style="color:var(--dim)">"${esc(before)}"</span><br>
+      → <span class="hl hl-orange">"${esc(currentStr)}"</span>
+    </div>`, 'concat');
+  addLog(`+= "${app}" → "${currentStr}"`, 'concat');
+  syncInput();
+}
+
+// ── C-STRING INFO ─────────────────────────────────────────────────
+function showCstrResult() {
+  const len = [...currentStr].length;
+  showResult('C-string mode', `
+    <div class="cstr-info">
+      <span class="hl">char s[${len+1}]</span> — array of ${len+1} bytes: ${len} characters + 1 for <span class="hl">\\0</span> (null terminator).<br><br>
+      The <span class="hl">\\0</span> at index [${len}] tells C functions like <code>strlen()</code>, <code>printf()</code>, and <code>strcpy()</code> where the string ends.
+      Without it, they just keep reading memory until they hit a zero byte somewhere — which could be anywhere.
+    </div>
+    <div class="cstr-danger">
+      <span class="hl">⚠ No bounds checking.</span> Writing more characters than the array can hold is a buffer overflow —
+      undefined behavior that can corrupt memory or crash the program.
+      This is exactly why <span class="hl">std::string</span> was invented.
+    </div>`, 'cstr');
+}
+
+// ── RESULT & LOG ──────────────────────────────────────────────────
+function showResult(opName, bodyHtml, type) {
+  const colors = {find:'var(--amber)',substr:'var(--cyan)',insert:'var(--green)',erase:'var(--red)',replace:'var(--purple)',concat:'var(--orange)',cstr:'var(--green)'};
+  document.getElementById('result-op-name').textContent = opName;
+  document.getElementById('result-op-name').style.color = colors[type] || 'var(--muted)';
+  document.getElementById('result-body').innerHTML = bodyHtml;
+}
+function clearResult() {
+  document.getElementById('result-op-name').textContent = 'run an operation to see output';
+  document.getElementById('result-op-name').style.color = 'var(--muted)';
+  document.getElementById('result-body').innerHTML = '<div class="result-msg" style="color:var(--dim)">// choose an operation from the left panel and hit run</div>';
+}
+function addLog(msg, type) {
+  const strip = document.getElementById('log-strip');
+  const el = document.createElement('div');
+  el.className = `log-entry log-${type}`;
+  el.textContent = msg;
+  strip.insertBefore(el, strip.firstChild);
+  while(strip.children.length > 12) strip.removeChild(strip.lastChild);
+}
+function clearLog() { document.getElementById('log-strip').innerHTML = ''; }
+
+function buildResultCells(str, cls) {
+  return [...str].map((ch,i) => {
+    const code = ch.codePointAt(0);
+    return `<div class="cell ${cls}"><div class="cell-ascii">${code<=127?code:'…'}</div><div class="cell-char">${ch===' '?'·':esc(ch)}</div><div class="cell-idx">[${i}]</div></div>`;
+  }).join('');
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────
+function toggleOp(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function onStrChange() {
+  currentStr = document.getElementById('str-input').value;
+  renderAll();
+  clearResult();
+  document.getElementById('meta-sso-badge').innerHTML =
+    [...currentStr].length <= SSO_THRESHOLD
+      ? `<span style="color:var(--green);font-size:10px">SSO ✓</span>`
+      : `<span style="color:var(--amber);font-size:10px">heap</span>`;
+  if(mode === 'cstr') showCstrResult();
+}
+
+function syncInput() {
+  document.getElementById('str-input').value = currentStr;
+  document.getElementById('meta-sso-badge').innerHTML =
+    [...currentStr].length <= SSO_THRESHOLD
+      ? `<span style="color:var(--green);font-size:10px">SSO ✓</span>`
+      : `<span style="color:var(--amber);font-size:10px">heap</span>`;
+}
+
+function flashShake(id) {
+  const el = document.getElementById(id);
+  el.classList.add('shake');
+  setTimeout(()=>el.classList.remove('shake'), 400);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+// Open find by default
+document.getElementById('op-find').classList.add('open');
+renderAll();
+onStrChange();
+addLog('Loaded "Hello, World!" — 13 characters', 'cstr');
+</script>
+</body>
+</html>
