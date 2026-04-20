@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Enum Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#8a9abb; --dim:#6a80a0;
+  --blue:#79c0ff; --green:#4ade80; --amber:#fbbd23;
+  --red:#f87171; --purple:#c084fc; --cyan:#67e8f9; --orange:#fb923c;
+  --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
+  --r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:12px 24px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;flex-wrap:wrap}
+header h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
+header p{font-size:12px;color:var(--muted);font-family:var(--code)}
+
+/* Tabs */
+.tabs{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:6px;overflow:hidden}
+.tab-btn{padding:6px 16px;font-size:12px;font-weight:500;font-family:var(--code);background:none;border:none;color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn.active{background:var(--s3);color:var(--text)}
+
+.tab-panel{display:none;flex:1;min-height:0}
+.tab-panel.active{display:flex}
+
+/* ── SHARED LEFT PANEL ── */
+.left{width:300px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.phead{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+/* ── SHARED RIGHT PANEL ── */
+.right{flex:1;padding:20px 24px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+
+/* Inputs */
+input[type=text],input[type=number],select,textarea{font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);outline:none;width:100%}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--blue)}
+textarea{resize:vertical;line-height:1.6}
+select{cursor:pointer}
+select option{background:#131720}
+
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:5px 12px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
+button:hover{background:var(--border2)}
+button:active{transform:scale(.97)}
+
+.field-group{padding:12px 14px;border-bottom:1px solid var(--border)}
+.field-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.field-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.field-row:last-child{margin-bottom:0}
+.field-key{font-size:11px;color:var(--dim);font-family:var(--code);flex-shrink:0;min-width:40px}
+.hint{font-size:11px;color:var(--dim);line-height:1.6;margin-top:6px;font-family:var(--code)}
+
+.run-btn{width:calc(100% - 28px);margin:12px 14px;display:block;text-align:center;padding:7px;border-radius:6px}
+.run-btn-green{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.07)}
+.run-btn-green:hover{background:rgba(74,222,128,.14)}
+.run-btn-blue{border-color:var(--blue);color:var(--blue);background:rgba(121,192,255,.07)}
+.run-btn-blue:hover{background:rgba(121,192,255,.14)}
+
+/* Region label */
+.region-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#8a9abb;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.region-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── ENUMERATOR CARDS ── */
+.enum-cards{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.enum-card{
+  display:flex;flex-direction:column;align-items:center;
+  border-radius:8px;border:1px solid var(--border2);
+  background:var(--s1);min-width:90px;overflow:hidden;
+  animation:popIn .25s cubic-bezier(.34,1.56,.64,1);
+  transition:border-color .2s,background .2s;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.8) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.enum-card.active-card{border-color:var(--blue);background:rgba(121,192,255,.07)}
+.enum-card-top{width:100%;padding:5px 10px;text-align:center;font-size:10px;font-family:var(--code);font-weight:600;border-bottom:1px solid var(--border)}
+.enum-card-name{padding:10px 8px;font-size:14px;font-weight:600;font-family:var(--code);color:var(--text);text-align:center}
+.enum-card-val{padding:4px 10px 8px;font-size:20px;font-weight:600;font-family:var(--code);color:var(--amber)}
+.enum-card-sub{font-size:9px;color:var(--dim);padding:0 6px 6px;text-align:center;font-family:var(--code)}
+
+/* ── MEMORY STRIP ── */
+.mem-strip{display:flex;gap:3px;flex-wrap:nowrap;align-items:center}
+.mem-byte{width:32px;height:32px;border-radius:4px;border:1px solid var(--border2);background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--code);color:#8a9abb;flex-shrink:0}
+.mem-byte.used{background:#0d2035;border-color:var(--blue);color:var(--blue)}
+.mem-byte.unused{background:var(--s1);border-color:var(--border);color:var(--dim)}
+.mem-label{font-size:11px;color:var(--dim);font-family:var(--code);margin-left:10px}
+
+/* ── SCOPE PANEL ── */
+.scope-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.scope-col{background:var(--s1);border-radius:var(--r);border:1px solid var(--border2);overflow:hidden}
+.scope-col-head{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:12px;font-family:var(--code);font-weight:600;display:flex;align-items:center;gap:8px}
+.scope-body{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.scope-name{font-size:12px;font-family:var(--code);padding:5px 10px;border-radius:4px;border:1px solid var(--border)}
+.scope-name.collides{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red)}
+.scope-name.safe{border-color:var(--green);background:rgba(74,222,128,.08);color:var(--green)}
+.scope-name.scoped{border-color:var(--border2);background:var(--s2);color:var(--muted)}
+.scope-prefix{color:var(--cyan);font-weight:600}
+
+.collision-banner{padding:10px 14px;border-radius:6px;font-size:12px;font-family:var(--code);line-height:1.6;display:flex;align-items:flex-start;gap:8px}
+.collision-banner.bad{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:#f8a0a0}
+.collision-banner.good{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:#80e8a0}
+
+/* ── LABEL SYNC ── */
+.sync-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sync-col{}
+.sync-col-head{font-size:11px;font-weight:600;font-family:var(--code);color:var(--muted);margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--border)}
+.sync-rows{display:flex;flex-direction:column;gap:4px}
+.sync-row{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:5px;border:1px solid var(--border);background:var(--s1);font-size:12px;font-family:var(--code);animation:popIn .2s ease}
+.sync-row.match{border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.05)}
+.sync-row.mismatch{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.05)}
+.sync-row.extra{border-color:rgba(251,189,35,.3);background:rgba(251,189,35,.05)}
+.sync-idx{color:var(--dim);font-size:10px;min-width:24px}
+.sync-name{flex:1}
+.sync-label-val{flex:1;color:var(--muted)}
+.sync-icon{font-size:14px;flex-shrink:0}
+.sync-summary{padding:10px 14px;border-radius:6px;font-size:12px;font-family:var(--code);line-height:1.6;margin-top:4px}
+.sync-summary.ok{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:#80e8a0}
+.sync-summary.warn{background:rgba(251,189,35,.07);border:1px solid rgba(251,189,35,.25);color:#fcd070}
+.sync-summary.bad{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);color:#f8a0a0}
+
+/* Code preview box */
+.code-box{background:#080b10;border:1px solid var(--border2);border-radius:6px;padding:14px;font-family:var(--code);font-size:12px;line-height:1.75;color:#a8d4ff;position:relative;overflow-x:auto;white-space:pre}
+.kw{color:#ff7b72}.tp{color:#79c0ff}.nm{color:#e6edf3}.cm{color:#484f6a}.val{color:#fbbd23}.str{color:#a5d6ff}.op{color:#ff7b72}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border2);background:var(--s3);color:var(--muted);cursor:pointer;font-family:var(--code);transition:all .12s}
+.copy-btn:hover{background:var(--border2);color:var(--text)}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.08)}
+
+/* Info card */
+.info-card{background:var(--s1);border:1px solid var(--border2);border-radius:6px;padding:12px 14px;font-size:12px;font-family:var(--code);line-height:1.7;color:#9ab0cc}
+.info-card strong{color:var(--text);font-weight:600}
+.info-card .hl-blue{color:var(--blue)}
+.info-card .hl-amber{color:var(--amber)}
+.info-card .hl-green{color:var(--green)}
+.info-card .hl-red{color:var(--red)}
+
+/* Underlying type selector */
+.type-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);font-size:11px;font-family:var(--code);color:var(--muted);cursor:pointer;transition:all .12s;background:var(--s2)}
+.type-pill:hover{border-color:var(--muted);color:var(--text)}
+.type-pill.active{border-color:var(--purple);color:var(--purple);background:rgba(192,132,252,.1)}
+.type-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+
+.badge{display:inline-block;font-size:10px;font-weight:600;font-family:var(--code);padding:2px 7px;border-radius:3px}
+.badge-new{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+.badge-old{background:rgba(251,189,35,.12);color:var(--amber);border:1px solid rgba(251,189,35,.3)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>C++ Enum Visualizer</h1>
+    <p>integer mapping · scope · memory · label sync</p>
+  </div>
+  <div class="tabs" id="main-tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">🔢 Integer Mapping</button>
+    <button class="tab-btn" onclick="switchTab(1)">🔭 Scope &amp; Collision</button>
+    <button class="tab-btn" onclick="switchTab(2)">💾 Memory &amp; Types</button>
+    <button class="tab-btn" onclick="switchTab(3)">🏷️ Label Sync</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 0: INTEGER MAPPING                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-0">
+  <div class="left">
+    <div class="phead">Define Your Enum</div>
+    <div class="field-group">
+      <div class="field-label">Enum Name</div>
+      <input type="text" id="t0-name" value="Day" maxlength="24"/>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Enumerators (one per line, optional = value)</div>
+      <textarea id="t0-members" rows="10">SUNDAY
+MONDAY
+TUESDAY
+WEDNESDAY
+THURSDAY
+FRIDAY
+SATURDAY</textarea>
+      <div class="hint">Add custom values with =<br>e.g. OK = 200</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Type</div>
+      <div class="field-row">
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="radio" name="t0-type" value="enum" checked onchange="renderTab0()"> plain enum
+        </label>
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:10px">
+          <input type="radio" name="t0-type" value="class" onchange="renderTab0()"> enum class
+        </label>
+      </div>
+    </div>
+    <button class="run-btn run-btn-green" onclick="renderTab0()">▶ Visualize</button>
+  </div>
+  <div class="right" id="right-0">
+    <div class="empty-msg" style="color:var(--dim);font-family:var(--code);font-size:13px">// hit Visualize to see the mapping</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 1: SCOPE & COLLISION                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-1">
+  <div class="left">
+    <div class="phead">Two Enums — Spot the Collision</div>
+    <div class="field-group">
+      <div class="field-label">Enum A name</div>
+      <input type="text" id="t1-nameA" value="TrafficLight"/>
+      <div class="field-label" style="margin-top:8px">Members (one per line)</div>
+      <textarea id="t1-membersA" rows="4">RED
+YELLOW
+GREEN</textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Enum B name</div>
+      <input type="text" id="t1-nameB" value="Color"/>
+      <div class="field-label" style="margin-top:8px">Members (one per line)</div>
+      <textarea id="t1-membersB" rows="4">RED
+GREEN
+BLUE</textarea>
+    </div>
+    <button class="run-btn run-btn-green" onclick="renderTab1()">▶ Check Scope</button>
+  </div>
+  <div class="right" id="right-1">
+    <div class="empty-msg" style="color:var(--dim);font-family:var(--code);font-size:13px">// hit Check Scope to see collisions</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 2: MEMORY & UNDERLYING TYPE                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-2">
+  <div class="left">
+    <div class="phead">Underlying Type Explorer</div>
+    <div class="field-group">
+      <div class="field-label">Enum Name</div>
+      <input type="text" id="t2-name" value="Direction"/>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Members</div>
+      <textarea id="t2-members" rows="5">NORTH
+SOUTH
+EAST
+WEST</textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Underlying Type</div>
+      <div class="type-pills" id="type-pills">
+        <span class="type-pill" onclick="selectType('int')">int (4B)</span>
+        <span class="type-pill active" onclick="selectType('uint8_t')">uint8_t (1B)</span>
+        <span class="type-pill" onclick="selectType('uint16_t')">uint16_t (2B)</span>
+        <span class="type-pill" onclick="selectType('int64_t')">int64_t (8B)</span>
+      </div>
+    </div>
+    <button class="run-btn run-btn-blue" onclick="renderTab2()">▶ Show Memory</button>
+  </div>
+  <div class="right" id="right-2">
+    <div class="empty-msg" style="color:var(--dim);font-family:var(--code);font-size:13px">// select a type and hit Show Memory</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 3: LABEL SYNC                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-3">
+  <div class="left">
+    <div class="phead">Label Sync Checker</div>
+    <div class="field-group">
+      <div class="field-label">Enum Name</div>
+      <input type="text" id="t3-name" value="WeatherCondition"/>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Enum Members (one per line)</div>
+      <textarea id="t3-members" rows="6">SUNNY
+RAINY
+CLOUDY
+STORMY
+END</textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">String Label Array (one per line)</div>
+      <textarea id="t3-labels" rows="5">"Sunny"
+"Rainy"
+"Cloudy"
+"Stormy"</textarea>
+      <div class="hint">Omit END from labels — it's just a sentinel</div>
+    </div>
+    <button class="run-btn run-btn-green" onclick="renderTab3()">▶ Check Sync</button>
+  </div>
+  <div class="right" id="right-3">
+    <div class="empty-msg" style="color:var(--dim);font-family:var(--code);font-size:13px">// hit Check Sync to validate alignment</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(n) {
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function parseMembers(raw) {
+  return raw.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const m = l.match(/^(\w+)\s*=\s*(-?\d+)$/);
+    return m ? {name:m[1],custom:parseInt(m[2])} : {name:l.replace(/\W.*/,''),custom:null};
+  });
+}
+function assignValues(members) {
+  let next = 0;
+  return members.map(m => {
+    if(m.custom !== null) { next = m.custom + 1; return {...m, value:m.custom}; }
+    return {...m, value:next++};
+  });
+}
+function copyCode(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const btn = el.parentElement.querySelector('.copy-btn');
+    btn.textContent='✓ copied!'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='copy';btn.classList.remove('copied');},2000);
+  });
+}
+
+// ── ACCENT COLORS FOR ENUM CARDS ─────────────────────────────
+const ACCENTS = [
+  {border:'rgba(121,192,255,.4)',bg:'rgba(121,192,255,.07)',top:'rgba(121,192,255,.12)',val:'#79c0ff'},
+  {border:'rgba(74,222,128,.4)',bg:'rgba(74,222,128,.07)',top:'rgba(74,222,128,.12)',val:'#4ade80'},
+  {border:'rgba(192,132,252,.4)',bg:'rgba(192,132,252,.07)',top:'rgba(192,132,252,.12)',val:'#c084fc'},
+  {border:'rgba(251,189,35,.4)',bg:'rgba(251,189,35,.07)',top:'rgba(251,189,35,.12)',val:'#fbbd23'},
+  {border:'rgba(103,232,249,.4)',bg:'rgba(103,232,249,.07)',top:'rgba(103,232,249,.12)',val:'#67e8f9'},
+  {border:'rgba(251,146,60,.4)',bg:'rgba(251,146,60,.07)',top:'rgba(251,146,60,.12)',val:'#fb923c'},
+  {border:'rgba(248,113,113,.4)',bg:'rgba(248,113,113,.07)',top:'rgba(248,113,113,.12)',val:'#f87171'},
+];
+function accent(i){ return ACCENTS[i % ACCENTS.length]; }
+
+// ─────────────────────────────────────────────────────────────
+// TAB 0: INTEGER MAPPING
+// ─────────────────────────────────────────────────────────────
+function renderTab0() {
+  const name = document.getElementById('t0-name').value.trim() || 'MyEnum';
+  const isClass = document.querySelector('input[name="t0-type"]:checked').value === 'class';
+  const raw = document.getElementById('t0-members').value;
+  const members = assignValues(parseMembers(raw));
+  const right = document.getElementById('right-0');
+
+  // Build code string
+  const kw = isClass ? 'enum class' : 'enum';
+  const prefix = isClass ? name+'::' : '';
+  let codeLines = [`<span class="kw">${kw}</span> <span class="nm">${esc(name)}</span> {`];
+  members.forEach((m,i)=>{
+    const comma = i < members.length-1 ? ',' : '';
+    const valComment = m.custom !== null
+      ? `  <span class="cm">// = ${m.value} (custom)</span>`
+      : `  <span class="cm">// = ${m.value}</span>`;
+    codeLines.push(`    <span class="nm">${esc(m.name)}</span>${m.custom!==null?` <span class="op">=</span> <span class="val">${m.value}</span>`:''}${comma}${valComment}`);
+  });
+  codeLines.push(`};`);
+  codeLines.push('');
+  codeLines.push(`<span class="kw">${kw === 'enum class' ? 'enum class' : 'enum'}</span> <span class="nm">${esc(name)}</span> today <span class="op">=</span> <span class="nm">${prefix}${esc(members[0]?.name||'VALUE')}</span>;`);
+
+  // Build cards
+  let cards = members.map((m,i)=>{
+    const a = accent(i);
+    return `<div class="enum-card" style="border-color:${a.border};background:${a.bg}">
+      <div class="enum-card-top" style="background:${a.top};color:${a.val}">${esc(prefix)}${esc(m.name)}</div>
+      <div class="enum-card-val" style="color:${a.val}">${m.value}</div>
+      <div class="enum-card-sub">int value</div>
+    </div>`;
+  }).join('');
+
+  // Active value info
+  const first = members[0];
+  const accessStyle = isClass
+    ? `<span class="kw">enum class</span> — must use <span style="color:var(--cyan)">${esc(name)}::</span> prefix`
+    : `<span class="kw">enum</span> — names live directly in scope`;
+
+  right.innerHTML = `
+    <div>
+      <div class="region-label">Code Preview</div>
+      <div class="code-box" id="t0-code">${codeLines.join('\n')}<button class="copy-btn" onclick="copyCode('t0-code')">copy</button></div>
+    </div>
+
+    <div>
+      <div class="region-label">Enumerator → Integer Mapping</div>
+      <div class="enum-cards">${cards}</div>
+    </div>
+
+    <div class="info-card">
+      ${accessStyle}<br>
+      Each name maps to an <span class="hl-amber">integer</span> under the hood.
+      ${members.some(m=>m.custom!==null)
+        ? `Custom values assigned — subsequent values continue incrementing from there.`
+        : `All values auto-assigned starting at <span class="hl-amber">0</span>.`}
+      ${isClass
+        ? `<br><span class="hl-green">enum class</span> will NOT implicitly convert to int — use <code>static_cast&lt;int&gt;(${esc(name)}::${esc(members[0]?.name||'X')})</code> when you need the raw number.`
+        : `<br><span class="hl-amber">Plain enum</span> implicitly converts to int: <code>int x = ${esc(members[0]?.name||'X')};</code> compiles without a cast.`}
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TAB 1: SCOPE & COLLISION
+// ─────────────────────────────────────────────────────────────
+function renderTab1() {
+  const nameA = document.getElementById('t1-nameA').value.trim() || 'EnumA';
+  const nameB = document.getElementById('t1-nameB').value.trim() || 'EnumB';
+  const membersA = parseMembers(document.getElementById('t1-membersA').value).map(m=>m.name);
+  const membersB = parseMembers(document.getElementById('t1-membersB').value).map(m=>m.name);
+  const setA = new Set(membersA), setB = new Set(membersB);
+  const collisions = membersA.filter(n=>setB.has(n));
+  const right = document.getElementById('right-1');
+
+  const hasCollision = collisions.length > 0;
+
+  function scopeRows(names, isClass, enumName, otherSet) {
+    return names.map(n=>{
+      const collides = !isClass && otherSet.has(n);
+      const cls = isClass ? 'scoped' : (collides ? 'collides' : 'safe');
+      const prefix = isClass ? `<span class="scope-prefix">${esc(enumName)}::</span>` : '';
+      return `<div class="scope-name ${cls}">${prefix}${esc(n)}</div>`;
+    }).join('');
+  }
+
+  // Code preview for plain enum
+  const plainCode = `<span class="kw">enum</span> <span class="nm">${esc(nameA)}</span> { ${membersA.map(n=>`<span class="nm">${esc(n)}</span>`).join(', ')} };
+<span class="kw">enum</span> <span class="nm">${esc(nameB)}</span> { ${membersB.map(n=>`<span class="nm">${esc(n)}</span>`).join(', ')} };
+${hasCollision ? `<span class="cm">// ❌ COMPILER ERROR: '${esc(collisions[0])}' redefined</span>` : `<span class="cm">// ✓ No collisions — but names still leak into global scope</span>`}`;
+
+  const classCode = `<span class="kw">enum class</span> <span class="nm">${esc(nameA)}</span> { ${membersA.map(n=>`<span class="nm">${esc(n)}</span>`).join(', ')} };
+<span class="kw">enum class</span> <span class="nm">${esc(nameB)}</span> { ${membersB.map(n=>`<span class="nm">${esc(n)}</span>`).join(', ')} };
+<span class="cm">// ✓ No collision — names are scoped to their enum</span>
+<span class="nm">${esc(nameA)}</span> a = <span class="nm">${esc(nameA)}::${esc(membersA[0]||'X')}</span>;
+<span class="nm">${esc(nameB)}</span> b = <span class="nm">${esc(nameB)}::${esc(membersB[0]||'X')}</span>;`;
+
+  right.innerHTML = `
+    <div class="scope-cols">
+      <div class="scope-col">
+        <div class="scope-col-head">
+          <span class="badge badge-old">plain enum</span>
+          Names leak into global scope
+        </div>
+        <div class="scope-body">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-family:var(--code);margin-bottom:2px">${esc(nameA)}</div>
+          ${scopeRows(membersA, false, nameA, setB)}
+          <div style="height:8px"></div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-family:var(--code);margin-bottom:2px">${esc(nameB)}</div>
+          ${scopeRows(membersB, false, nameB, setA)}
+        </div>
+      </div>
+      <div class="scope-col">
+        <div class="scope-col-head">
+          <span class="badge badge-new">enum class</span>
+          Names stay inside their scope
+        </div>
+        <div class="scope-body">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-family:var(--code);margin-bottom:2px">${esc(nameA)}</div>
+          ${scopeRows(membersA, true, nameA, setB)}
+          <div style="height:8px"></div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-family:var(--code);margin-bottom:2px">${esc(nameB)}</div>
+          ${scopeRows(membersB, true, nameB, setA)}
+        </div>
+      </div>
+    </div>
+
+    <div class="collision-banner ${hasCollision ? 'bad' : 'good'}">
+      <span style="font-size:18px">${hasCollision ? '💥' : '✓'}</span>
+      <span>${hasCollision
+        ? `Plain <code>enum</code> collision detected: <strong>${collisions.map(esc).join(', ')}</strong> defined in both <strong>${esc(nameA)}</strong> and <strong>${esc(nameB)}</strong>. This is a compiler error. <code>enum class</code> solves it instantly.`
+        : `No collisions this time — but plain <code>enum</code> names still live in global scope and could clash with future code. Prefer <code>enum class</code>.`
+      }</span>
+    </div>
+
+    <div>
+      <div class="region-label">plain enum — what the compiler sees</div>
+      <div class="code-box" id="t1-plain">${plainCode}<button class="copy-btn" onclick="copyCode('t1-plain')">copy</button></div>
+    </div>
+
+    <div>
+      <div class="region-label">enum class — the fix</div>
+      <div class="code-box" id="t1-class">${classCode}<button class="copy-btn" onclick="copyCode('t1-class')">copy</button></div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TAB 2: MEMORY & UNDERLYING TYPE
+// ─────────────────────────────────────────────────────────────
+let selectedType = 'uint8_t';
+const TYPE_INFO = {
+  'int':      {bytes:4, signed:true,  range:'−2,147,483,648 to 2,147,483,647', note:'default if no type specified'},
+  'uint8_t':  {bytes:1, signed:false, range:'0 to 255',       note:'great for flags or small enums'},
+  'uint16_t': {bytes:2, signed:false, range:'0 to 65,535',    note:'good for medium-range enums'},
+  'int64_t':  {bytes:8, signed:true,  range:'±9.2 × 10¹⁸',   note:'use for large or serialized values'},
+};
+
+function selectType(t) {
+  selectedType = t;
+  document.querySelectorAll('.type-pill').forEach(p=>p.classList.toggle('active',p.textContent.startsWith(t)));
+  renderTab2();
+}
+
+function renderTab2() {
+  const name = document.getElementById('t2-name').value.trim() || 'Direction';
+  const members = assignValues(parseMembers(document.getElementById('t2-members').value));
+  const ti = TYPE_INFO[selectedType] || TYPE_INFO['int'];
+  const right = document.getElementById('right-2');
+
+  // Memory strip: 8 bytes total, show used vs unused
+  const used = ti.bytes;
+  const total = 8;
+  const maxVal = members[members.length-1]?.value ?? 0;
+  const maxSafe = selectedType==='uint8_t'?255 : selectedType==='uint16_t'?65535 : selectedType==='int'?2147483647 : Number.MAX_SAFE_INTEGER;
+  const overflows = maxVal > maxSafe;
+  const overflowWarning = maxVal > maxSafe
+    ? '<span style="color:var(--red)">⚠ largest value may overflow!</span>'
+    : '<span style="color:var(--green)">✓ fits in type</span>';
+  let memHtml = '<div class="mem-strip">';
+  for(let i=0;i<total;i++) {
+    if(i<used) memHtml += `<div class="mem-byte used">B${i}</div>`;
+    else memHtml += `<div class="mem-byte unused">—</div>`;
+  }
+  memHtml += `<span class="mem-label">${used} byte${used>1?'s':''} per variable &nbsp;·&nbsp; ${overflowWarning}</span></div>`;
+
+  // Check overflow
+
+  // Code
+  const codeStr = `<span class="kw">enum class</span> <span class="nm">${esc(name)}</span> : <span class="tp">${selectedType}</span> {
+${members.map((m,i)=>`    <span class="nm">${esc(m.name)}</span>${m.custom!==null?` <span class="op">=</span> <span class="val">${m.value}</span>`:''}`+(i<members.length-1?',':'')+`  <span class="cm">// ${m.value} → stored as ${selectedType}</span>`).join('\n')}
+};
+
+<span class="cm">// sizeof(${esc(name)}) = ${used} byte${used>1?'s':''}</span>
+<span class="cm">// sizeof(int) = 4 bytes — saves ${4-used >= 0 ? 4-used : 'no'} byte${Math.abs(4-used)!==1?'s':''} vs default</span>`;
+
+  // Per-member memory table
+  let memTable = members.map((m,i)=>{
+    const a = accent(i);
+    const overflow = m.value > maxSafe;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:5px;border:1px solid ${overflow?'rgba(248,113,113,.3)':a.border};background:${overflow?'rgba(248,113,113,.05)':a.bg};margin-bottom:4px;font-family:var(--code);font-size:12px">
+      <span style="color:${a.val};font-weight:600;min-width:120px">${esc(name)}::${esc(m.name)}</span>
+      <span style="color:var(--amber);font-weight:600;min-width:50px">${m.value}</span>
+      <span style="color:var(--dim)">→ stored as <span style="color:#9ab0cc">${selectedType}</span> (${used}B)</span>
+      ${overflow ? `<span style="color:var(--red);font-size:11px">⚠ OVERFLOW</span>` : ''}
+    </div>`;
+  }).join('');
+
+  right.innerHTML = `
+    <div>
+      <div class="region-label">Memory per Variable — ${used} of 8 bytes used</div>
+      ${memHtml}
+      <div style="font-size:11px;color:var(--dim);font-family:var(--code);margin-top:6px">
+        Type: <span style="color:var(--purple)">${selectedType}</span> &nbsp;·&nbsp;
+        ${ti.signed?'signed':'unsigned'} &nbsp;·&nbsp;
+        Range: ${ti.range} &nbsp;·&nbsp;
+        ${ti.note}
+      </div>
+    </div>
+
+    <div>
+      <div class="region-label">Value Storage — each enumerator in memory</div>
+      ${memTable}
+      ${overflows ? `<div class="info-card" style="border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.05)"><span style="color:var(--red)">⚠ Overflow risk!</span> The largest value (${maxVal}) exceeds the max of <span style="color:var(--purple)">${selectedType}</span> (${maxSafe}). Use a wider type.</div>` : ''}
+    </div>
+
+    <div>
+      <div class="region-label">Code Preview</div>
+      <div class="code-box" id="t2-code">${codeStr}<button class="copy-btn" onclick="copyCode('t2-code')">copy</button></div>
+    </div>
+
+    <div class="info-card">
+      The default underlying type is <span class="hl-blue">int</span> (4 bytes) when no type is specified.
+      Specifying <span class="hl-amber">: ${selectedType}</span> forces the compiler to store each variable in exactly ${used} byte${used>1?'s':''}.
+      ${used < 4 ? `That saves <span class="hl-green">${4-used} byte${4-used>1?'s':''}</span> per variable — significant if you store many.` : used > 4 ? `That uses <span style="color:var(--amber)">${used-4} extra byte${used-4>1?'s':''}</span> per variable — justified when values exceed int range.` : `Same size as the default.`}
+      Always make sure your largest enumerator value fits within the type's range.
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TAB 3: LABEL SYNC
+// ─────────────────────────────────────────────────────────────
+function renderTab3() {
+  const name = document.getElementById('t3-name').value.trim() || 'MyEnum';
+  const members = parseMembers(document.getElementById('t3-members').value).map(m=>m.name);
+  const rawLabels = document.getElementById('t3-labels').value.split('\n').map(l=>l.trim().replace(/^["']|["']$/g,'')).filter(Boolean);
+
+  // Find END sentinel
+  const endIdx = members.findIndex(m=>m==='END'||m==='COUNT'||m==='_MAX');
+  const dataMembers = endIdx >= 0 ? members.slice(0, endIdx) : members;
+  const sentinel = endIdx >= 0 ? members[endIdx] : null;
+
+  const right = document.getElementById('right-3');
+
+  // Build sync rows
+  const maxLen = Math.max(dataMembers.length, rawLabels.length);
+  let rows = '';
+  let mismatches = 0, extras = 0;
+
+  for(let i=0; i<maxLen; i++) {
+    const memName = dataMembers[i];
+    const labelVal = rawLabels[i];
+    let cls='', icon='', statusText='';
+
+    if(memName && labelVal) {
+      cls='match'; icon='✓';
+    } else if(memName && !labelVal) {
+      cls='mismatch'; icon='✗'; mismatches++;
+    } else {
+      cls='extra'; icon='⚠'; extras++;
+    }
+
+    rows += `<div class="sync-row ${cls}">
+      <span class="sync-idx">[${i}]</span>
+      <span class="sync-name" style="color:${cls==='match'?'var(--text)':cls==='mismatch'?'var(--red)':'var(--amber)'}">
+        ${memName ? esc(memName) : '<span style="color:var(--dim)">(missing)</span>'}
+      </span>
+      <span class="sync-label-val" style="color:${cls==='match'?'var(--muted)':cls==='extra'?'var(--amber)':'var(--red)'}">
+        ${labelVal ? `"${esc(labelVal)}"` : '<span style="color:var(--dim)">(no label)</span>'}
+      </span>
+      <span class="sync-icon" style="color:${cls==='match'?'var(--green)':cls==='extra'?'var(--amber)':'var(--red)'}">${icon}</span>
+    </div>`;
+  }
+
+  // Summary
+  let summaryClass='ok', summaryMsg='';
+  if(mismatches===0 && extras===0) {
+    summaryMsg = `✓ Perfectly in sync! All ${dataMembers.length} enumerators have a matching label. Safe to iterate.`;
+  } else if(extras > 0 && mismatches === 0) {
+    summaryClass='warn';
+    summaryMsg = `⚠ ${extras} extra label${extras>1?'s':''} without a matching enumerator. They'll be unreachable and waste memory.`;
+  } else {
+    summaryClass='bad';
+    summaryMsg = `✗ ${mismatches} enumerator${mismatches>1?'s':''} have no label. Accessing them via the array will return garbage or crash at runtime.`;
+  }
+
+  // Code preview
+  const labelArr = rawLabels.map(l=>`<span class="str">"${esc(l)}"</span>`).join(', ');
+  const loopCode = `<span class="kw">enum</span> <span class="nm">${esc(name)}</span> { ${[...dataMembers.map(n=>`<span class="nm">${esc(n)}</span>`), ...(sentinel?[`<span class="nm">${esc(sentinel)}</span>`]:[])].join(', ')} };
+
+vector&lt;<span class="tp">string</span>&gt; ${esc(name)}Names = { ${labelArr} };
+
+<span class="kw">for</span> (<span class="tp">int</span> i = <span class="nm">${esc(dataMembers[0]||'FIRST')}</span>; i &lt; ${sentinel?`<span class="nm">${esc(sentinel)}</span>`:`<span class="val">${dataMembers.length}</span>`}; i++) {
+    cout &lt;&lt; ${esc(name)}Names[i] &lt;&lt; endl;
+}`;
+
+  right.innerHTML = `
+    <div>
+      <div class="region-label">Sync Check — Enum vs Label Array</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+        <div style="font-size:11px;font-weight:600;font-family:var(--code);color:var(--muted);padding:4px 10px;border-bottom:1px solid var(--border)">Enum member</div>
+        <div style="font-size:11px;font-weight:600;font-family:var(--code);color:var(--muted);padding:4px 10px;border-bottom:1px solid var(--border)">String label</div>
+      </div>
+      <div class="sync-rows">${rows}</div>
+      ${sentinel ? `<div style="font-size:11px;color:var(--dim);font-family:var(--code);margin-top:8px;padding:6px 10px;border-radius:4px;background:var(--s2)"><span style="color:var(--muted)">${esc(sentinel)}</span> is a sentinel — excluded from label array. It marks the loop boundary.</div>` : ''}
+    </div>
+
+    <div class="sync-summary ${summaryClass}">${summaryMsg}</div>
+
+    <div>
+      <div class="region-label">Generated Iteration Code</div>
+      <div class="code-box" id="t3-code">${loopCode}<button class="copy-btn" onclick="copyCode('t3-code')">copy</button></div>
+    </div>
+
+    <div class="info-card">
+      <strong>Why does sync matter?</strong> The label array and the enum have no compile-time relationship.
+      Adding a member to the enum without adding a label will <span class="hl-red">compile cleanly</span> but produce
+      <span class="hl-red">garbage output or a crash at runtime</span> when you access the out-of-bounds index.
+      The <span class="hl-amber">END / COUNT</span> sentinel pattern at least gives you a number to check against —
+      but you still have to keep the label array manually in sync.
+    </div>`;
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+renderTab0();
+renderTab1();
+renderTab2();
+renderTab3();
+</script>
+</body>
+</html>
