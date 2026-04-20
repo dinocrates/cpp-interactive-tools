@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Pointer & Reference Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7080a0; --dim:#2e3a52;
+  --var:#79c0ff;   --var-bg:rgba(121,192,255,.09); --var-bd:rgba(121,192,255,.25);
+  --ptr:#4ade80;   --ptr-bg:rgba(74,222,128,.09);  --ptr-bd:rgba(74,222,128,.25);
+  --ref:#fb923c;   --ref-bg:rgba(251,146,60,.09);  --ref-bd:rgba(251,146,60,.25);
+  --null:#f87171;  --null-bg:rgba(248,113,113,.09);--null-bd:rgba(248,113,113,.25);
+  --dbl:#c084fc;   --dbl-bg:rgba(192,132,252,.09); --dbl-bd:rgba(192,132,252,.25);
+  --r:8px; --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{padding:11px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;background:var(--s1)}
+header h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
+header p{font-size:12px;color:var(--muted);font-family:var(--code)}
+.layout{flex:1;display:grid;grid-template-columns:380px 1fr;min-height:0}
+
+/* ── LEFT PANEL ── */
+.left{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--s1)}
+.phead{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.dots{display:flex;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%}
+.presets{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.pl{font-size:11px;color:var(--dim)}
+.preset{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--code)}
+.preset:hover{color:var(--text);border-color:var(--text)}
+textarea{flex:1;width:100%;background:#080b10;color:var(--text);font-family:var(--code);font-size:12.5px;line-height:1.75;padding:14px;border:none;outline:none;resize:none;tab-size:2}
+.toolbar{padding:10px 12px;background:var(--s2);border-top:1px solid var(--border);display:flex;gap:8px}
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:6px 13px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
+button:hover{background:var(--border2)}
+.btn-run{background:#0f2a14;border-color:var(--ptr);color:var(--ptr)}
+.btn-run:hover{background:#163820}
+
+/* Inspector */
+.inspector{flex-shrink:0;border-top:1px solid var(--border);background:var(--s2);min-height:130px;max-height:200px;overflow-y:auto}
+.insp-head{padding:8px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);border-bottom:1px solid var(--border)}
+.insp-empty{padding:18px 14px;font-size:12px;color:var(--dim);font-family:var(--code);text-align:center}
+.insp-content{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.insp-row{display:flex;align-items:flex-start;gap:10px}
+.insp-label{font-size:11px;font-weight:600;font-family:var(--code);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:1px}
+.insp-val{font-size:13px;font-family:var(--code);line-height:1.5}
+.insp-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.err{padding:6px 14px;font-size:11px;color:var(--null);font-family:var(--code);background:rgba(248,113,113,.07);border-top:1px solid rgba(248,113,113,.2);display:none}
+.err.on{display:block}
+
+/* ── RIGHT PANEL ── */
+.right{overflow:auto;background:var(--bg);padding:24px;position:relative}
+
+/* Legend */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.leg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Memory visualization container */
+#mem-wrap{position:relative;display:inline-block;min-width:500px}
+#mem-svg{display:block}
+
+.empty-state{color:var(--dim);font-family:var(--code);font-size:13px;text-align:center;padding:60px 20px;line-height:2}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Pointer &amp; Reference Explorer</h1>
+    <p>x86-64 · C++ memory model</p>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <div class="phead">
+      <div class="dots"><span class="dot" style="background:#ff5f56"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#27c93f"></span></div>
+      <span>main.cpp</span>
+    </div>
+    <div class="presets">
+      <span class="pl">Examples:</span>
+      <button class="preset" onclick="loadP('basics')">basics</button>
+      <button class="preset" onclick="loadP('null')">null ptr</button>
+      <button class="preset" onclick="loadP('ref')">reference</button>
+      <button class="preset" onclick="loadP('deref')">dereference</button>
+      <button class="preset" onclick="loadP('double')">double ptr</button>
+      <button class="preset" onclick="loadP('swap')">swap</button>
+    </div>
+    <textarea id="code" spellcheck="false">int x = 42;
+int y = 7;
+
+int* p = &x;</textarea>
+    <div class="toolbar">
+      <button class="btn-run" onclick="run()">&#9654; Explore</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+    <div id="err" class="err"></div>
+    <div class="inspector">
+      <div class="insp-head">Inspector — click a cell to examine</div>
+      <div id="inspector-body"><div class="insp-empty">// select a variable</div></div>
+    </div>
+  </div>
+
+  <div class="right" id="right-panel">
+    <div class="legend">
+      <div class="leg"><span class="leg-dot" style="background:var(--var-bg);border:1px solid var(--var)"></span>Variable</div>
+      <div class="leg"><span class="leg-dot" style="background:var(--ptr-bg);border:1px solid var(--ptr)"></span>Pointer</div>
+      <div class="leg"><span class="leg-dot" style="background:var(--ref-bg);border:1px solid var(--ref)"></span>Reference (alias)</div>
+      <div class="leg"><span class="leg-dot" style="background:var(--null-bg);border:1px solid var(--null)"></span>Null pointer</div>
+      <div class="leg"><span class="leg-dot" style="background:var(--dbl-bg);border:1px solid var(--dbl)"></span>Double pointer</div>
+    </div>
+    <div id="mem-wrap">
+      <div class="empty-state" id="empty-msg">// declare some variables and pointers<br>// then hit Explore</div>
+      <svg id="mem-svg" style="display:none"></svg>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── PRESETS ────────────────────────────────────────────────────
+const PRESETS = {
+  basics:  `int x = 42;\nint y = 7;\n\nint* p = &x;`,
+  null:    `int x = 100;\n\nint* p = &x;\nint* q = nullptr;`,
+  ref:     `int score = 95;\n\nint* p = &score;\nint& r = score;`,
+  deref:   `int val = 10;\n\nint* ptr = &val;\n*ptr = 99;`,
+  double:  `int num = 5;\n\nint* p = &num;\nint** pp = &p;`,
+  swap:    `int a = 3;\nint b = 7;\n\nint* pa = &a;\nint* pb = &b;\n\nint temp = *pa;\n*pa = *pb;\n*pb = temp;`
+};
+
+function loadP(k){ document.getElementById('code').value=PRESETS[k]; run(); }
+
+// ─── TYPE METADATA ───────────────────────────────────────────────
+const TYPE_SIZES = {
+  int:4, float:4, double:8, char:1, bool:1, long:8, short:2,
+  'unsigned int':4, 'unsigned long':8, string:24
+};
+
+function baseSize(type) {
+  if (!type) return 4;
+  const clean = type.replace(/[*&\s]/g,'');
+  return TYPE_SIZES[clean] || 4;
+}
+
+function ptrDepth(type) {
+  return (type.match(/\*/g)||[]).length;
+}
+
+function isRef(type) { return type.includes('&'); }
+function isPtr(type) { return type.includes('*') && !type.includes('&'); }
+
+// ─── PARSER ─────────────────────────────────────────────────────
+function parseCode(src) {
+  const vars = {};      // name -> variable object
+  const order = [];     // declaration order
+  let addr = 0x1000;
+
+  function nextAddr(size, align) {
+    const a = Math.min(align, 8);
+    addr = Math.ceil(addr / a) * a;
+    const a2 = addr;
+    addr += size;
+    return a2;
+  }
+
+  function parseVal(s, type) {
+    if (!s) return undefined;
+    s = s.trim();
+    if (s === 'true') return 1;
+    if (s === 'false') return 0;
+    if (s === 'nullptr' || s === 'NULL' || s === '0x0') return null;
+    if (s.startsWith("'") && s.endsWith("'")) return s.charCodeAt(1);
+    if (s.startsWith('"')) return s;
+    const n = parseFloat(s);
+    return isNaN(n) ? s : n;
+  }
+
+  const lines = src.split('\n');
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//')) continue;
+
+    // Double pointer: type** name = &ptr
+    const dblPtr = /^(\w+(?:\s+\w+)?)\s*\*\s*\*\s*(\w+)\s*(?:=\s*(.+?))?\s*;$/.exec(line);
+    if (dblPtr) {
+      const [, baseType, name, val] = dblPtr;
+      const type = baseType.trim() + '**';
+      const size = 8;
+      const a = nextAddr(size, 8);
+      let pointsTo = null, storedAddr = null;
+      if (val) {
+        const v = val.trim();
+        if (v.startsWith('&')) {
+          const tgt = v.slice(1).trim();
+          if (vars[tgt]) { pointsTo = tgt; storedAddr = vars[tgt].address; }
+        }
+      }
+      const vobj = { name, type, baseType: baseType.trim(), kind:'dbl', address: a, size, pointsTo, storedAddr };
+      vars[name] = vobj; order.push(vobj);
+      continue;
+    }
+
+    // Pointer: type* name = &other | nullptr
+    const ptr = /^(\w+(?:\s+\w+)?)\s*\*\s*(\w+)\s*(?:=\s*(.+?))?\s*;$/.exec(line);
+    if (ptr) {
+      const [, baseType, name, val] = ptr;
+      const type = baseType.trim() + '*';
+      const size = 8;
+      const a = nextAddr(size, 8);
+      let pointsTo = null, storedAddr = null, isNull = false;
+      if (val) {
+        const v = val.trim();
+        if (v === 'nullptr' || v === 'NULL' || v === '0') {
+          isNull = true; storedAddr = 0;
+        } else if (v.startsWith('&')) {
+          const tgt = v.slice(1).trim();
+          if (vars[tgt]) { pointsTo = tgt; storedAddr = vars[tgt].address; }
+        }
+      }
+      const vobj = { name, type, baseType: baseType.trim(), kind: isNull?'null':'ptr', address: a, size, pointsTo, storedAddr, isNull };
+      vars[name] = vobj; order.push(vobj);
+      continue;
+    }
+
+    // Reference: type& name = other
+    const ref = /^(\w+(?:\s+\w+)?)\s*&\s*(\w+)\s*=\s*(\w+)\s*;$/.exec(line);
+    if (ref) {
+      const [, baseType, name, targetName] = ref;
+      const target = vars[targetName];
+      const vobj = {
+        name, type: baseType.trim()+'&', baseType: baseType.trim(), kind:'ref',
+        address: target ? target.address : addr,
+        aliasOf: targetName, size: 0
+      };
+      vars[name] = vobj; order.push(vobj);
+      continue;
+    }
+
+    // Dereference assignment: *name = value
+    const derefA = /^\*(\w+)\s*=\s*(.+?)\s*;$/.exec(line);
+    if (derefA) {
+      const [, ptrName, newVal] = derefA;
+      const p = vars[ptrName];
+      if (p && p.pointsTo && vars[p.pointsTo]) {
+        vars[p.pointsTo].value = parseVal(newVal);
+      }
+      continue;
+    }
+
+    // Variable: type name = value
+    const varD = /^(\w+(?:\s+\w+)?)\s+(\w+)\s*(?:=\s*(.+?))?\s*;$/.exec(line);
+    if (varD) {
+      const [, type, name, val] = varD;
+      const t = type.trim();
+      const sz = baseSize(t);
+      const a = nextAddr(sz, sz);
+      const vobj = { name, type: t, baseType: t, kind:'var', address: a, size: sz, value: parseVal(val, t) };
+      vars[name] = vobj; order.push(vobj);
+      continue;
+    }
+  }
+
+  return { vars, order };
+}
+
+// ─── SVG RENDERING ──────────────────────────────────────────────
+const CELL_H = 64;
+const CELL_W = 440;
+const CELL_GAP = 10;
+const MARGIN = { top: 16, left: 20, right: 120 };
+const ARROW_EXIT = CELL_W + 16;
+const ARROW_LOOP = CELL_W + 60;
+
+let currentOrder = [];
+let currentVars = {};
+let selectedName = null;
+
+function hex(n) {
+  if (n === null || n === undefined) return 'nullptr';
+  return '0x' + n.toString(16).toUpperCase().padStart(8, '0');
+}
+
+function shortHex(n) {
+  if (n === null || n === undefined) return 'nullptr';
+  return '0x' + n.toString(16).toUpperCase().padStart(4, '0');
+}
+
+function escX(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function cellY(idx) {
+  return MARGIN.top + idx * (CELL_H + CELL_GAP);
+}
+
+function getColor(kind) {
+  const map = { var:'var', ptr:'ptr', ref:'ref', null:'null', dbl:'dbl' };
+  return map[kind] || 'var';
+}
+
+function formatValue(v) {
+  if (v.kind === 'null') return 'nullptr';
+  if (v.kind === 'ptr' || v.kind === 'dbl') {
+    if (v.storedAddr !== null && v.storedAddr !== undefined) return shortHex(v.storedAddr);
+    return '???';
+  }
+  if (v.kind === 'ref') return '(alias — no storage)';
+  if (v.value === undefined || v.value === null) return '?';
+  if (typeof v.value === 'string' && v.value.startsWith('"')) return escX(v.value);
+  return String(v.value);
+}
+
+function buildSVG(vars, order) {
+  // Assign row indices (refs share row with their target)
+  const rowMap = {}; // name -> row index
+  let rowIdx = 0;
+  for (const v of order) {
+    if (v.kind === 'ref') {
+      const target = vars[v.aliasOf];
+      rowMap[v.name] = target ? rowMap[v.aliasOf] : rowIdx++;
+    } else {
+      rowMap[v.name] = rowIdx++;
+    }
+  }
+  const totalRows = rowIdx;
+
+  const svgH = MARGIN.top + totalRows * (CELL_H + CELL_GAP) + MARGIN.top;
+  const svgW = CELL_W + MARGIN.left + MARGIN.right;
+
+  // Group vars by row
+  const rows = {}; // rowIdx -> [vars]
+  for (const v of order) {
+    const r = rowMap[v.name];
+    if (!rows[r]) rows[r] = [];
+    rows[r].push(v);
+  }
+
+  let svg = `<svg id="mem-svg" width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="ah-ptr" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+    <polygon points="8 0,0 3,8 6" fill="#4ade80"/>
+  </marker>
+  <marker id="ah-dbl" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+    <polygon points="8 0,0 3,8 6" fill="#c084fc"/>
+  </marker>
+  <marker id="ah-null" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0,8 3,0 6" fill="#f87171"/>
+  </marker>
+</defs>\n`;
+
+  // Draw cells
+  for (const [rIdx, rowVars] of Object.entries(rows)) {
+    const ri = parseInt(rIdx);
+    const y = cellY(ri);
+    const cx = MARGIN.left;
+
+    // The primary var (first non-ref, or ref if only ref)
+    const primary = rowVars.find(v => v.kind !== 'ref') || rowVars[0];
+    const aliases = rowVars.filter(v => v.kind === 'ref');
+    const colorKey = getColor(primary.kind);
+    const isSelected = selectedName && rowVars.some(v => v.name === selectedName);
+
+    // Cell background
+    const fillColor = isSelected ? `rgba(255,255,255,.06)` : 'transparent';
+    svg += `<rect x="${cx}" y="${y}" width="${CELL_W}" height="${CELL_H}" rx="6" fill="${fillColor}" stroke="var(--border2)" stroke-width="${isSelected?2:1}" class="mem-cell" data-names="${rowVars.map(v=>v.name).join(',')}" style="cursor:pointer" onclick="selectCell(this)"/>\n`;
+
+    // Left accent bar
+    const accentColors = {var:'#79c0ff',ptr:'#4ade80',ref:'#fb923c',null:'#f87171',dbl:'#c084fc'};
+    svg += `<rect x="${cx}" y="${y+6}" width="3" height="${CELL_H-12}" rx="2" fill="${accentColors[colorKey]||'#79c0ff'}"/>\n`;
+
+    // Address column (left)
+    svg += `<text x="${cx+14}" y="${y+20}" font-family="JetBrains Mono,monospace" font-size="10" fill="#3d4d6a" dominant-baseline="auto">addr</text>\n`;
+    svg += `<text x="${cx+14}" y="${y+38}" font-family="JetBrains Mono,monospace" font-size="12" font-weight="500" fill="#5a6a88">${shortHex(primary.address)}</text>\n`;
+    if (primary.size > 0) {
+      svg += `<text x="${cx+14}" y="${y+52}" font-family="JetBrains Mono,monospace" font-size="10" fill="#2e3a52">${primary.size}B</text>\n`;
+    }
+
+    // Vertical separator
+    svg += `<line x1="${cx+100}" y1="${y+8}" x2="${cx+100}" y2="${y+CELL_H-8}" stroke="#252d40" stroke-width="1"/>\n`;
+
+    // Name + type column (middle-left)
+    const nameColor = accentColors[colorKey] || '#79c0ff';
+    // Build full name with aliases
+    const allNames = [primary.name, ...aliases.map(a=>a.name)];
+    let nameX = cx + 110;
+    for (let i = 0; i < allNames.length; i++) {
+      const nm = allNames[i];
+      const isAlias = i > 0;
+      svg += `<text x="${nameX}" y="${y+26}" font-family="JetBrains Mono,monospace" font-size="${isAlias?11:14}" font-weight="${isAlias?400:600}" fill="${isAlias?'#fb923c':nameColor}">${escX(nm)}</text>\n`;
+      if (i < allNames.length - 1) {
+        const approxW = allNames[i].length * (isAlias ? 7 : 9);
+        nameX += approxW + 6;
+        svg += `<text x="${nameX}" y="${y+26}" font-family="JetBrains Mono,monospace" font-size="11" fill="#2e3a52"> / </text>\n`;
+        nameX += 18;
+      }
+    }
+    // Type badge
+    const typeStr = primary.type;
+    svg += `<text x="${cx+110}" y="${y+46}" font-family="JetBrains Mono,monospace" font-size="11" fill="#404d65">${escX(typeStr)}</text>\n`;
+
+    // Vertical separator
+    svg += `<line x1="${cx+280}" y1="${y+8}" x2="${cx+280}" y2="${y+CELL_H-8}" stroke="#252d40" stroke-width="1"/>\n`;
+
+    // Value column (right side of cell)
+    svg += `<text x="${cx+292}" y="${y+20}" font-family="JetBrains Mono,monospace" font-size="10" fill="#3d4d6a">value stored</text>\n`;
+
+    const valStr = formatValue(primary);
+    const isNullVal = primary.kind === 'null';
+    const isPtrVal = primary.kind === 'ptr' || primary.kind === 'dbl';
+    const isRefVal = primary.kind === 'ref';
+    const valColor = isNullVal ? '#f87171' : isPtrVal ? (primary.kind==='dbl'?'#c084fc':'#4ade80') : isRefVal ? '#fb923c' : '#c8d8f4';
+
+    svg += `<text x="${cx+292}" y="${y+40}" font-family="JetBrains Mono,monospace" font-size="${valStr.length>14?10:12}" font-weight="600" fill="${valColor}" dominant-baseline="central">${escX(valStr)}</text>\n`;
+
+    if (primary.kind === 'null') {
+      svg += `<text x="${cx+292}" y="${y+54}" font-family="JetBrains Mono,monospace" font-size="10" fill="#f87171">⊘ null — points nowhere</text>\n`;
+    } else if (isPtrVal && primary.pointsTo) {
+      svg += `<text x="${cx+292}" y="${y+54}" font-family="JetBrains Mono,monospace" font-size="10" fill="#404d65">→ ${escX(primary.pointsTo)}</text>\n`;
+    } else if (isRefVal) {
+      svg += `<text x="${cx+292}" y="${y+54}" font-family="JetBrains Mono,monospace" font-size="10" fill="#fb923c">alias of ${escX(primary.aliasOf)}</text>\n`;
+    }
+
+  }
+
+  // Draw arrows for pointers — all routing stays on the RIGHT side of cells
+  const exitX = MARGIN.left + CELL_W + 6;
+  let arrowIdx = 0;
+  for (const v of order) {
+    if ((v.kind === 'ptr' || v.kind === 'dbl') && !v.isNull && v.pointsTo) {
+      const fromRow = rowMap[v.name];
+      const toRow = rowMap[v.pointsTo];
+      if (fromRow === undefined || toRow === undefined) continue;
+
+      const fromY = cellY(fromRow) + CELL_H / 2;
+      const toY   = cellY(toRow)   + CELL_H / 2;
+      const color  = v.kind === 'dbl' ? '#c084fc' : '#4ade80';
+      const marker = v.kind === 'dbl' ? 'url(#ah-dbl)' : 'url(#ah-ptr)';
+
+      // Stagger each arrow further right so they don't overlap
+      const loopX = exitX + 24 + arrowIdx * 22;
+      arrowIdx++;
+
+      // Path: exit right edge → go right to loopX → curve up/down → return to right edge of target
+      // Arrow never crosses the cells
+      svg += `<path d="M ${exitX} ${fromY} L ${loopX} ${fromY} C ${loopX+18} ${fromY}, ${loopX+18} ${toY}, ${loopX} ${toY} L ${exitX} ${toY}" fill="none" stroke="${color}" stroke-width="1.5" marker-end="${marker}"/>\n`;
+      svg += `<circle cx="${exitX}" cy="${fromY}" r="3" fill="${color}"/>\n`;
+    }
+
+    // Null pointer: short stub + ✕ symbol, right side only
+    if (v.kind === 'null') {
+      const fromRow = rowMap[v.name];
+      const fromY = cellY(fromRow) + CELL_H / 2;
+      const xX = exitX + 30;
+      svg += `<line x1="${exitX}" y1="${fromY}" x2="${xX}" y2="${fromY}" stroke="#f87171" stroke-width="1.5"/>\n`;
+      svg += `<circle cx="${xX}" cy="${fromY}" r="8" fill="rgba(248,113,113,.15)" stroke="#f87171" stroke-width="1.5"/>\n`;
+      svg += `<line x1="${xX-4}" y1="${fromY-4}" x2="${xX+4}" y2="${fromY+4}" stroke="#f87171" stroke-width="1.5"/>\n`;
+      svg += `<line x1="${xX+4}" y1="${fromY-4}" x2="${xX-4}" y2="${fromY+4}" stroke="#f87171" stroke-width="1.5"/>\n`;
+    }
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ─── INSPECTOR ──────────────────────────────────────────────────
+function selectCell(el) {
+  const names = el.getAttribute('data-names').split(',');
+  selectedName = names[0];
+
+  // Re-highlight
+  document.querySelectorAll('.mem-cell').forEach(c => {
+    const cn = c.getAttribute('data-names').split(',');
+    c.setAttribute('stroke-width', cn.some(n=>names.includes(n)) ? '2' : '1');
+    c.setAttribute('fill', cn.some(n=>names.includes(n)) ? 'rgba(255,255,255,.06)' : 'transparent');
+  });
+
+  const primary = currentVars[names[0]];
+  if (!primary) return;
+
+  let html = '<div class="insp-content">';
+
+  const colorKey = getColor(primary.kind);
+  const accentColors = {var:'#79c0ff',ptr:'#4ade80',ref:'#fb923c',null:'#f87171',dbl:'#c084fc'};
+  const accent = accentColors[colorKey];
+
+  if (primary.kind === 'var') {
+    html += row(accent, `${primary.name}`, `lives at <b>${shortHex(primary.address)}</b> &nbsp;|&nbsp; size: ${primary.size} bytes`, `value stored: ${primary.value}`);
+  }
+  else if (primary.kind === 'ptr') {
+    const tgt = currentVars[primary.pointsTo];
+    html += row(accent, `${primary.name}`, `pointer — lives at <b>${shortHex(primary.address)}</b>`, `stores the address of <b>${primary.pointsTo}</b>`);
+    html += row('#5a6a88', `&amp;${primary.name}`, `address of the pointer itself`, shortHex(primary.address));
+    html += row('#4ade80', `${primary.name}`, `the address it holds`, shortHex(primary.storedAddr));
+    if (tgt) html += row('#79c0ff', `*${primary.name}`, `dereference: value at that address`, String(tgt.value ?? '?'));
+  }
+  else if (primary.kind === 'dbl') {
+    const tgt = currentVars[primary.pointsTo];
+    const tgtTgt = tgt ? currentVars[tgt.pointsTo] : null;
+    html += row(accent, `${primary.name}`, `double pointer — lives at <b>${shortHex(primary.address)}</b>`, `stores address of pointer <b>${primary.pointsTo}</b>`);
+    html += row('#c084fc', `*${primary.name}`, `dereference once → pointer value`, tgt ? shortHex(tgt.address) : '?');
+    if (tgtTgt) html += row('#79c0ff', `**${primary.name}`, `dereference twice → final value`, String(tgtTgt.value ?? '?'));
+  }
+  else if (primary.kind === 'ref') {
+    const tgt = currentVars[primary.aliasOf];
+    html += row(accent, `${primary.name}`, `reference (alias) — <b>no new memory</b>`, `same address as <b>${primary.aliasOf}</b>: ${shortHex(primary.address)}`);
+    html += row('#79c0ff', `${primary.name}`, `reading it gives`, String(tgt?.value ?? '?'));
+    html += `<div style="font-size:11px;color:var(--dim);font-family:var(--code);padding:4px 0 0">Note: a reference is not a pointer — it has no address of its own</div>`;
+  }
+  else if (primary.kind === 'null') {
+    html += row(accent, `${primary.name}`, `null pointer — lives at <b>${shortHex(primary.address)}</b>`, `holds 0x00000000`);
+    html += `<div style="font-size:11px;color:#f87171;font-family:var(--code);padding:4px 0 0">⚠ Dereferencing a null pointer crashes the program!</div>`;
+  }
+
+  html += '</div>';
+  document.getElementById('inspector-body').innerHTML = html;
+}
+
+function row(color, label, desc, val) {
+  return `<div class="insp-row">
+    <span class="insp-label" style="background:rgba(0,0,0,.3);color:${color};border:1px solid ${color}40">${label}</span>
+    <div><div class="insp-val">${val}</div><div class="insp-sub">${desc}</div></div>
+  </div>`;
+}
+
+// ─── MAIN ────────────────────────────────────────────────────────
+function run() {
+  const src = document.getElementById('code').value.trim();
+  const errEl = document.getElementById('err');
+  errEl.classList.remove('on');
+
+  let result;
+  try { result = parseCode(src); }
+  catch(e) { errEl.textContent = 'Parse error: ' + e.message; errEl.classList.add('on'); return; }
+
+  const { vars, order } = result;
+  currentVars = vars;
+  currentOrder = order;
+  selectedName = null;
+
+  document.getElementById('inspector-body').innerHTML = '<div class="insp-empty">// click a cell to inspect</div>';
+
+  if (!order.length) {
+    document.getElementById('mem-wrap').innerHTML = '<div class="empty-state">// no variables found — try declaring some</div>';
+    return;
+  }
+
+  document.getElementById('mem-wrap').innerHTML = buildSVG(vars, order);
+}
+
+function clearAll() {
+  document.getElementById('code').value = '';
+  document.getElementById('mem-wrap').innerHTML = '<div class="empty-state">// declare some variables and pointers<br>// then hit Explore</div>';
+  document.getElementById('inspector-body').innerHTML = '<div class="insp-empty">// select a variable</div>';
+  document.getElementById('err').classList.remove('on');
+  currentVars = {}; currentOrder = []; selectedName = null;
+}
+
+window.addEventListener('load', run);
+</script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Object Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e1015;
+  --s1: #161a22;
+  --s2: #1c2130;
+  --s3: #232940;
+  --border: #2a3145;
+  --border2: #3a4560;
+  --text: #dce6f5;
+  --muted: #7a8aaa;
+  --dim: #3d4d6a;
+
+  --pub-color: #4ade80;   --pub-bg: rgba(74,222,128,.08);  --pub-border: rgba(74,222,128,.3);
+  --priv-color: #f87171;  --priv-bg: rgba(248,113,113,.08); --priv-border: rgba(248,113,113,.3);
+  --prot-color: #fb923c;  --prot-bg: rgba(251,146,60,.08);  --prot-border: rgba(251,146,60,.3);
+  --meth-color: #818cf8;  --meth-bg: rgba(129,140,248,.08); --meth-border: rgba(129,140,248,.3);
+  --stat-color: #facc15;  --stat-bg: rgba(250,204,21,.08);  --stat-border: rgba(250,204,21,.3);
+  --this-color: #67e8f9;
+
+  --int-c: #79c0ff; --float-c: #4ade80; --char-c: #fb923c;
+  --bool-c: #f472b6; --ptr-c: #c084fc; --other-c: #94a3b8;
+
+  --r: 8px;
+  --font-code: 'JetBrains Mono', monospace;
+  --font-ui: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+header p { font-size: 12px; color: var(--muted); font-family: var(--font-code); }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.panel-head {
+  padding: 9px 14px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Editor */
+.window-dots { display:flex; gap:5px; }
+.wd { width:10px; height:10px; border-radius:50%; }
+
+textarea {
+  width: 100%; display: block;
+  background: #080b10;
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.75;
+  padding: 14px;
+  border: none; outline: none;
+  resize: vertical;
+  min-height: 340px;
+  tab-size: 2;
+}
+
+.toolbar {
+  padding: 10px 14px;
+  background: var(--s2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+button {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--s3);
+  color: var(--text);
+  transition: all .12s;
+}
+button:hover { background: var(--border2); }
+.btn-run { background: #142814; border-color: var(--pub-color); color: var(--pub-color); }
+.btn-run:hover { background: #1a361a; }
+.preset-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  background: var(--s1);
+}
+.plabel { font-size: 11px; color: var(--dim); }
+.preset {
+  font-size: 11px; padding: 3px 9px;
+  border-radius: 4px; border: 1px solid var(--border2);
+  background: transparent; color: var(--muted);
+  cursor: pointer; font-family: var(--font-code);
+}
+.preset:hover { color: var(--text); border-color: var(--muted); }
+
+.err-bar {
+  padding: 7px 14px;
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: #f87171;
+  display: none;
+  background: rgba(248,113,113,.07);
+  border-top: 1px solid rgba(248,113,113,.2);
+}
+.err-bar.on { display: block; }
+
+/* Class Diagram Panel */
+.class-box {
+  margin: 14px;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.class-name-bar {
+  padding: 10px 14px;
+  text-align: center;
+  background: var(--s3);
+  border-bottom: 1px solid var(--border2);
+}
+.class-name-bar .kw { font-family: var(--font-code); font-size: 11px; color: var(--muted); }
+.class-name-bar .cn { font-family: var(--font-code); font-size: 15px; font-weight: 600; color: var(--text); }
+
+.section-divider {
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  border-bottom: 1px solid var(--border);
+}
+.sec-pub  { color: var(--pub-color);  background: var(--pub-bg);  border-color: var(--pub-border); }
+.sec-priv { color: var(--priv-color); background: var(--priv-bg); border-color: var(--priv-border);}
+.sec-prot { color: var(--prot-color); background: var(--prot-bg); border-color: var(--prot-border);}
+.sec-stat { color: var(--stat-color); background: var(--stat-bg); border-color: var(--stat-border);}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+.member-row:last-child { border-bottom: none; }
+
+.access-icon {
+  width: 16px; height: 16px;
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.ai-pub  { background: var(--pub-bg);  color: var(--pub-color);  border: 1px solid var(--pub-border);  }
+.ai-priv { background: var(--priv-bg); color: var(--priv-color); border: 1px solid var(--priv-border); }
+.ai-prot { background: var(--prot-bg); color: var(--prot-color); border: 1px solid var(--prot-border); }
+.ai-stat { background: var(--stat-bg); color: var(--stat-color); border: 1px solid var(--stat-border); }
+
+.mtype { color: var(--muted); }
+.mname { color: var(--text); }
+.mfunc { color: var(--meth-color); font-style: italic; }
+.mstat { color: var(--stat-color); }
+
+.empty-msg {
+  padding: 28px; text-align: center;
+  color: var(--dim); font-family: var(--font-code); font-size: 12px; line-height: 2;
+}
+
+/* Memory Layout Panel */
+.mem-wrap { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+.mem-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: 8px;
+  display: flex; justify-content: space-between;
+}
+
+.mem-object {
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mem-header {
+  padding: 6px 12px;
+  background: var(--s3);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex; justify-content: space-between;
+}
+.mem-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 36px;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  animation: pop .18s ease;
+}
+.mem-row:last-child { border-bottom: none; }
+@keyframes pop { from { opacity:0; transform:scaleY(.9); } to { opacity:1; transform:scaleY(1); } }
+
+.mem-addr {
+  padding: 7px 10px;
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--dim);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+.mem-cell {
+  padding: 7px 10px;
+  font-family: var(--font-code);
+  font-size: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.mem-bytes {
+  padding: 7px 6px;
+  font-family: var(--font-code);
+  font-size: 10px;
+  color: var(--dim);
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.mem-pad {
+  background: rgba(255,255,255,.02);
+}
+.pad-label { font-size: 10px; color: var(--dim); font-style: italic; }
+
+.sizeof-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  background: var(--s3);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--muted);
+}
+.sizeof-val { color: var(--text); font-weight: 600; }
+
+/* Code segment */
+.code-segment {
+  border: 1px solid var(--meth-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--meth-bg);
+}
+.code-seg-header {
+  padding: 7px 12px;
+  background: rgba(129,140,248,.12);
+  border-bottom: 1px solid var(--meth-border);
+  font-family: var(--font-code);
+  font-size: 11px;
+  color: var(--meth-color);
+  font-weight: 600;
+}
+.method-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(129,140,248,.12);
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+.method-entry:last-child { border-bottom: none; }
+.maddr { font-size: 10px; color: var(--dim); width: 80px; flex-shrink: 0; }
+.mfull { color: var(--meth-color); }
+.this-badge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(103,232,249,.1);
+  color: var(--this-color);
+  border: 1px solid rgba(103,232,249,.25);
+  white-space: nowrap;
+}
+
+/* Legend */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--s2);
+}
+.leg-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--muted);
+}
+.leg-dot {
+  width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+}
+
+.insight {
+  margin: 0 14px 14px;
+  padding: 10px 12px;
+  background: rgba(103,232,249,.05);
+  border: 1px solid rgba(103,232,249,.15);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--this-color);
+  line-height: 1.6;
+  font-family: var(--font-code);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>C++ Object Visualizer</h1>
+    <p>class layout · access control · memory model</p>
+  </div>
+</header>
+
+<div class="main-grid">
+
+  <!-- PANEL 1: Editor -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="window-dots">
+        <span class="wd" style="background:#ff5f56"></span>
+        <span class="wd" style="background:#ffbd2e"></span>
+        <span class="wd" style="background:#27c93f"></span>
+      </div>
+      <span>class definition</span>
+      <span></span>
+    </div>
+    <div class="preset-row">
+      <span class="plabel">Examples:</span>
+      <button class="preset" onclick="load('player')">Player</button>
+      <button class="preset" onclick="load('bankaccount')">BankAccount</button>
+      <button class="preset" onclick="load('vector2d')">Vector2D</button>
+    </div>
+    <textarea id="code" spellcheck="false">class Player {
+public:
+    string name;
+    int health;
+    int score;
+
+    void takeDamage(int dmg);
+    void displayStats();
+    string getName();
+
+private:
+    float speed;
+    bool isAlive;
+    int secretCode;
+
+    void respawn();
+};</textarea>
+    <div class="toolbar">
+      <button class="btn-run" onclick="run()">&#9654;&nbsp; Visualize</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+    <div id="err" class="err-bar"></div>
+  </div>
+
+  <!-- PANEL 2: Class Diagram -->
+  <div class="panel">
+    <div class="panel-head"><span>Class Structure</span><span id="diag-name" style="font-size:11px;color:var(--dim)"></span></div>
+    <div id="diagram"><div class="empty-msg">// paste a class definition<br>// and hit Visualize</div></div>
+    <div class="legend">
+      <div class="leg-item"><span class="leg-dot" style="background:var(--pub-bg);border:1px solid var(--pub-color)"></span>+ public</div>
+      <div class="leg-item"><span class="leg-dot" style="background:var(--priv-bg);border:1px solid var(--priv-color)"></span>- private</div>
+      <div class="leg-item"><span class="leg-dot" style="background:var(--prot-bg);border:1px solid var(--prot-color)"></span># protected</div>
+      <div class="leg-item"><span class="leg-dot" style="background:var(--stat-bg);border:1px solid var(--stat-color)"></span>~ static</div>
+      <div class="leg-item"><span class="leg-dot" style="background:var(--meth-bg);border:1px solid var(--meth-color)"></span>method</div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: Memory Layout -->
+  <div class="panel">
+    <div class="panel-head"><span>Memory Layout</span></div>
+    <div id="memory"><div class="empty-msg">// object memory layout<br>// appears here</div></div>
+  </div>
+
+</div>
+
+<script>
+const PRESETS = {
+  player: `class Player {\npublic:\n    string name;\n    int health;\n    int score;\n\n    void takeDamage(int dmg);\n    void displayStats();\n    string getName();\n\nprivate:\n    float speed;\n    bool isAlive;\n    int secretCode;\n\n    void respawn();\n};`,
+  bankaccount: `class BankAccount {\npublic:\n    string ownerName;\n\n    BankAccount(string name, double bal);\n    void deposit(double amount);\n    double getBalance();\n    void printStatement();\n\nprivate:\n    double balance;\n    int accountNumber;\n    bool isFrozen;\n\nprotected:\n    double interestRate;\n\npublic:\n    static int totalAccounts;\n};`,
+  vector2d: `class Vector2D {\npublic:\n    double x;\n    double y;\n\n    Vector2D(double x, double y);\n    Vector2D add(Vector2D other);\n    double magnitude();\n    void normalize();\n    void print();\n\nprivate:\n    bool isDirty;\n\npublic:\n    static Vector2D zero();\n};`,
+};
+
+function load(k) { document.getElementById('code').value = PRESETS[k]; run(); }
+
+const TYPE_SIZES = {
+  int:4, float:4, double:8, char:1, bool:1, long:8, short:2,
+  'long long':8, 'unsigned int':4, 'unsigned long':8, 'unsigned char':1,
+  string:24, 'std::string':24, auto:4
+};
+const TYPE_COLORS = {
+  int:'#79c0ff', float:'#4ade80', double:'#4ade80', char:'#fb923c',
+  bool:'#f472b6', long:'#79c0ff', short:'#79c0ff', string:'#c084fc',
+  'std::string':'#c084fc', pointer:'#c084fc'
+};
+
+function typeSize(t) {
+  if (t.endsWith('*') || t.endsWith('&')) return 8;
+  return TYPE_SIZES[t] || 8;
+}
+function typeColor(t) {
+  if (t.endsWith('*')) return TYPE_COLORS.pointer;
+  return TYPE_COLORS[t] || '#94a3b8';
+}
+
+function parse(src) {
+  const classMatch = src.match(/class\s+(\w+)/);
+  if (!classMatch) return null;
+  const className = classMatch[1];
+
+  const members = [], methods = [];
+  let access = 'private';
+  const lines = src.split('\n');
+
+  const accessRx = /^\s*(public|private|protected)\s*:/;
+  const memberRx = /^\s*(static\s+)?((?:unsigned\s+|long\s+)?(?:long long|std::string|string|double|float|long|short|bool|char|int|\w+)\s*\*?\s*)\s+(\w+)\s*(?:=\s*[^;(]+)?\s*;/;
+  const methodRx = /^\s*(static\s+)?((?:virtual\s+)?(?:unsigned\s+)?(?:long long|std::string|string|double|float|long|short|bool|char|int|void|\w+)\s*\*?\s*)\s+(\w+)\s*\(([^)]*)\)\s*(?:const\s*)?(?:override\s*)?(?:=\s*0\s*)?(?:;|\{)/;
+  const ctorRx = /^\s*(static\s+)?(\w+)\s*\(([^)]*)\)\s*(?:;|\{)/;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//') || line === '{' || line === '};' || line === '}') continue;
+    const am = accessRx.exec(line);
+    if (am) { access = am[1]; continue; }
+
+    const isStatic = /\bstatic\b/.test(line);
+    const mm = methodRx.exec(line);
+    if (mm) {
+      methods.push({ access: isStatic ? 'static' : access, ret: mm[2].trim(), name: mm[3], params: mm[4], isStatic });
+      continue;
+    }
+
+    const cm = ctorRx.exec(line);
+    if (cm && cm[2] === className) {
+      methods.push({ access, ret: '', name: cm[2], params: cm[3], isCtor: true, isStatic });
+      continue;
+    }
+
+    const dm = memberRx.exec(line);
+    if (dm) {
+      const rawType = dm[2].trim().replace(/\s+/g,' ');
+      members.push({ access: isStatic ? 'static' : access, type: rawType, name: dm[3], isStatic });
+    }
+  }
+
+  return { className, members, methods };
+}
+
+function hex(n) { return '0x' + n.toString(16).toUpperCase().padStart(4,'0'); }
+
+function run() {
+  const src = document.getElementById('code').value;
+  const errEl = document.getElementById('err');
+  const data = parse(src);
+
+  if (!data) {
+    errEl.textContent = 'No class found. Make sure you have: class ClassName { ... };';
+    errEl.classList.add('on');
+    return;
+  }
+  errEl.classList.remove('on');
+
+  renderDiagram(data);
+  renderMemory(data);
+}
+
+function accessIcon(a) {
+  if (a === 'public')    return '<span class="access-icon ai-pub">+</span>';
+  if (a === 'private')   return '<span class="access-icon ai-priv">-</span>';
+  if (a === 'protected') return '<span class="access-icon ai-prot">#</span>';
+  if (a === 'static')    return '<span class="access-icon ai-stat">~</span>';
+  return '';
+}
+
+function renderDiagram({ className, members, methods }) {
+  document.getElementById('diag-name').textContent = className;
+
+  const groups = {};
+  const order = ['public','protected','private','static'];
+  for (const a of order) groups[a] = [];
+
+  for (const m of members) groups[m.access]?.push({ ...m, isMethod: false });
+  for (const m of methods) {
+    const key = m.isStatic ? 'static' : m.access;
+    (groups[key] || groups['public']).push({ ...m, isMethod: true });
+  }
+
+  let html = `<div class="class-box">
+    <div class="class-name-bar">
+      <div class="kw">class</div>
+      <div class="cn">${className}</div>
+    </div>`;
+
+  const labels = { public:'+ public', protected:'# protected', private:'- private', static:'~ static' };
+  const secClass = { public:'sec-pub', protected:'sec-prot', private:'sec-priv', static:'sec-stat' };
+
+  for (const a of order) {
+    if (!groups[a].length) continue;
+    html += `<div class="section-divider ${secClass[a]}">${labels[a]}</div>`;
+    for (const item of groups[a]) {
+      if (item.isMethod || item.isCtor) {
+        const ret = item.isCtor ? '' : (item.ret || 'void') + ' ';
+        html += `<div class="member-row">${accessIcon(a)}
+          <span class="mfunc">${ret}${item.name}(${item.params || ''})</span>
+        </div>`;
+      } else {
+        html += `<div class="member-row">${accessIcon(a)}
+          <span class="mtype">${item.type}&nbsp;</span><span class="mname">${item.name}</span>
+        </div>`;
+      }
+    }
+  }
+
+  html += '</div>';
+  document.getElementById('diagram').innerHTML = html;
+}
+
+function renderMemory({ className, members, methods }) {
+  const dataMembers = members.filter(m => m.access !== 'static' && !m.isStatic);
+  const staticMembers = members.filter(m => m.access === 'static' || m.isStatic);
+  const allMethods = methods;
+
+  let offset = 0;
+  const rows = [];
+  for (const m of dataMembers) {
+    const size = typeSize(m.type);
+    const align = Math.min(size, 8);
+    const pad = (align - (offset % align)) % align;
+    if (pad > 0) { rows.push({ isPad: true, size: pad, offset }); offset += pad; }
+    rows.push({ ...m, size, offset, addr: 0x1000 + offset });
+    offset += size;
+  }
+  const finalAlign = 8;
+  const tailPad = (finalAlign - (offset % finalAlign)) % finalAlign;
+  if (tailPad > 0) rows.push({ isPad: true, size: tailPad, offset });
+  const sizeof = offset + tailPad;
+
+  let html = '<div class="mem-wrap">';
+
+  // Object instance section
+  html += `<div>
+    <div class="mem-section-title">
+      <span>Object Instance &nbsp;<span style="color:var(--dim);font-weight:400">${className} obj;</span></span>
+      <span style="color:var(--dim)">stack / heap</span>
+    </div>`;
+
+  if (dataMembers.length === 0) {
+    html += `<div style="padding:16px;text-align:center;color:var(--dim);font-family:var(--font-code);font-size:12px">No data members</div>`;
+  } else {
+    html += `<div class="mem-object"><div class="mem-header"><span>obj @ 0x1000</span><span>offset</span></div>`;
+    for (const r of rows) {
+      if (r.isPad) {
+        html += `<div class="mem-row mem-pad">
+          <div class="mem-addr">${hex(0x1000 + r.offset)}</div>
+          <div class="mem-cell"><span class="pad-label">padding (${r.size}B)</span></div>
+          <div class="mem-bytes">${r.size}B</div>
+        </div>`;
+      } else {
+        const col = typeColor(r.type);
+        const acc = r.access;
+        const dot = acc === 'public' ? 'ai-pub' : acc === 'private' ? 'ai-priv' : 'ai-prot';
+        html += `<div class="mem-row">
+          <div class="mem-addr">${hex(r.addr)}</div>
+          <div class="mem-cell">
+            <span class="access-icon ${dot}" style="flex-shrink:0">${acc==='public'?'+':acc==='private'?'-':'#'}</span>
+            <span style="color:${col};font-family:var(--font-code);font-size:11px">${r.type}</span>
+            <span style="color:var(--text);font-family:var(--font-code);font-size:12px">${r.name}</span>
+          </div>
+          <div class="mem-bytes">${r.size}B</div>
+        </div>`;
+      }
+    }
+    html += `<div class="sizeof-bar">sizeof(${className}) = <span class="sizeof-val">&nbsp;${sizeof} bytes</span></div>`;
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Methods - code segment
+  if (allMethods.length) {
+    html += `<div>
+      <div class="mem-section-title">
+        <span>Methods</span>
+        <span style="color:var(--dim)">code segment</span>
+      </div>
+      <div class="code-segment">
+        <div class="code-seg-header">&#128279; ${className}:: — shared by all instances</div>`;
+    let maddr = 0x4010;
+    for (const m of allMethods) {
+      const acc = m.isStatic ? 'static' : m.access;
+      const dot = acc === 'public' ? 'ai-pub' : acc === 'private' ? 'ai-priv' : acc === 'protected' ? 'ai-prot' : 'ai-stat';
+      const ret = m.isCtor ? '' : (m.ret || 'void') + ' ';
+      html += `<div class="method-entry">
+        <span class="access-icon ${dot}">${acc==='public'?'+':acc==='private'?'-':acc==='protected'?'#':'~'}</span>
+        <span class="maddr">${hex(maddr)}</span>
+        <span class="mfull">${className}::${m.name}(${m.params||''})</span>
+        ${m.isStatic ? '' : '<span class="this-badge">this* ptr</span>'}
+      </div>`;
+      maddr += 0x20 + Math.floor(Math.random()*0x10);
+    }
+    html += '</div></div>';
+  }
+
+  // Static members
+  if (staticMembers.length) {
+    html += `<div>
+      <div class="mem-section-title">
+        <span>Static Members</span>
+        <span style="color:var(--dim)">.data segment</span>
+      </div>
+      <div class="mem-object" style="border-color:var(--stat-border)">
+        <div class="mem-header" style="color:var(--stat-color);background:var(--stat-bg)">
+          <span>one copy — shared across all instances</span>
+        </div>`;
+    let saddr = 0x6020;
+    for (const m of staticMembers) {
+      const size = typeSize(m.type);
+      const col = typeColor(m.type);
+      html += `<div class="mem-row">
+        <div class="mem-addr">${hex(saddr)}</div>
+        <div class="mem-cell">
+          <span class="access-icon ai-stat">~</span>
+          <span style="color:${col};font-family:var(--font-code);font-size:11px">${m.type}</span>
+          <span style="color:var(--text);font-family:var(--font-code);font-size:12px">${m.name}</span>
+        </div>
+        <div class="mem-bytes">${size}B</div>
+      </div>`;
+      saddr += size;
+    }
+    html += '</div></div>';
+  }
+
+  html += `<div class="insight">
+    &#x2139; Methods are <strong>not</strong> stored inside the object. All instances share one copy of each method in the code segment. The hidden <span style="color:var(--this-color)">this</span> pointer tells each method which object it's operating on.
+  </div>`;
+
+  html += '</div>';
+  document.getElementById('memory').innerHTML = html;
+}
+
+function clearAll() {
+  document.getElementById('code').value = '';
+  document.getElementById('diagram').innerHTML = '<div class="empty-msg">// paste a class definition<br>// and hit Visualize</div>';
+  document.getElementById('memory').innerHTML = '<div class="empty-msg">// object memory layout<br>// appears here</div>';
+  document.getElementById('diag-name').textContent = '';
+  document.getElementById('err').classList.remove('on');
+}
+
+run();
+</script>
+</body>
+</html>

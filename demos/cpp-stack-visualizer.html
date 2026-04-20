@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Stack Variable Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #21262d;
+    --border:    #30363d;
+    --border2:   #484f58;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --dim:       #484f58;
+
+    --int:    #79c0ff;  --int-bg:    #0d2035;
+    --float:  #56d364;  --float-bg:  #0d2a18;
+    --char:   #ffa657;  --char-bg:   #2d1f0a;
+    --bool:   #f778ba;  --bool-bg:   #2d0f1f;
+    --ptr:    #d2a8ff;  --ptr-bg:    #1d1135;
+    --long:   #79c0ff;  --long-bg:   #0d2035;
+
+    --rsp-color: #ffa657;
+    --rbp-color: #56d364;
+
+    --radius: 6px;
+    --font-code: 'JetBrains Mono', monospace;
+    --font-ui: 'Space Grotesk', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    color: var(--text);
+    letter-spacing: -.02em;
+  }
+  header .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--font-code);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-red   { background: #ff5f56; }
+  .dot-yellow{ background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+  .traffic-lights { display: flex; gap: 6px; }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 14px;
+    border: none;
+    outline: none;
+    resize: vertical;
+    min-height: 160px;
+    tab-size: 2;
+  }
+
+  .toolbar {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--surface2);
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    transition: background .12s, border-color .12s;
+  }
+  button:hover { background: var(--border); border-color: var(--border2); }
+
+  .btn-run {
+    background: #1a4a1a;
+    border-color: #56d364;
+    color: #56d364;
+  }
+  .btn-run:hover { background: #1e5a1e; }
+
+  .presets {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    background: var(--surface);
+  }
+  .preset-label { font-size: 11px; color: var(--dim); align-self: center; margin-right: 2px; }
+  .preset {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font-code);
+  }
+  .preset:hover { color: var(--text); border-color: var(--text); background: var(--surface2); }
+
+  .err-bar {
+    padding: 6px 14px;
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: #f85149;
+    min-height: 0;
+    display: none;
+    background: #2d0b0b;
+    border-top: 1px solid #5a1a1a;
+  }
+  .err-bar.show { display: block; }
+
+  /* Stack display */
+  .stack-outer { padding: 14px; }
+
+  .stack-visual {
+    position: relative;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .stack-rsp-marker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-bottom: 1px dashed var(--rsp-color);
+    background: rgba(255,166,87,.06);
+  }
+  .stack-rsp-marker .arrow { color: var(--rsp-color); font-size: 13px; }
+  .stack-rsp-marker .label {
+    font-family: var(--font-code);
+    font-size: 11px;
+    color: var(--rsp-color);
+    font-weight: 600;
+  }
+
+  .stack-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 52px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+    animation: fadeSlide .2s ease;
+  }
+  .stack-row:last-child { border-bottom: none; }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .type-badge {
+    font-family: var(--font-code);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 4px;
+    text-align: center;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+
+  .var-name {
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .var-val {
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .var-val span { color: #79c0ff; }
+
+  .var-meta {
+    text-align: right;
+    font-family: var(--font-code);
+    font-size: 10px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  .rbp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    background: rgba(86,211,100,.04);
+    border-top: 1px solid var(--border);
+  }
+  .rbp-row .label {
+    font-family: var(--font-code);
+    font-size: 11px;
+    color: var(--rbp-color);
+    font-weight: 600;
+  }
+  .rbp-row .sublabel { font-family: var(--font-code); font-size: 10px; color: var(--dim); margin-left: 4px; }
+
+  .empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--dim);
+    font-family: var(--font-code);
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  /* Registers */
+  .reg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .reg-cell {
+    background: var(--surface);
+    padding: 11px 14px;
+  }
+  .reg-cell .reg-name {
+    font-family: var(--font-code);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 4px;
+  }
+  .reg-cell .reg-val {
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .reg-cell .reg-desc {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 2px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-code);
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .hint {
+    font-size: 11px;
+    color: var(--dim);
+    padding: 8px 14px;
+    font-family: var(--font-code);
+    border-top: 1px solid var(--border);
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>C++ Stack Variable Visualizer</h1>
+  <span class="subtitle">x86-64 · main() frame</span>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Editor -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="traffic-lights">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+        </div>
+        <span>main.cpp</span>
+      </div>
+      <div class="presets">
+        <span class="preset-label">Try:</span>
+        <button class="preset" onclick="load('basics')">basic types</button>
+        <button class="preset" onclick="load('mixed')">mixed vars</button>
+        <button class="preset" onclick="load('pointers')">pointers</button>
+        <button class="preset" onclick="load('padding')">alignment</button>
+      </div>
+      <textarea id="code" spellcheck="false">int x = 5;
+float y = 3.14;
+char c = 'A';
+bool flag = true;</textarea>
+      <div class="toolbar">
+        <button class="btn-run" onclick="run()">&#9654;&nbsp; Compile &amp; Run</button>
+        <button onclick="clearAll()">Clear</button>
+      </div>
+      <div id="err" class="err-bar"></div>
+    </div>
+
+    <!-- Registers -->
+    <div class="card">
+      <div class="card-header"><span>Registers</span></div>
+      <div class="reg-grid">
+        <div class="reg-cell">
+          <div class="reg-name" style="color: var(--rsp-color)">RSP</div>
+          <div class="reg-val" id="r-rsp">0x7FFF0000</div>
+          <div class="reg-desc">stack pointer — top of stack</div>
+        </div>
+        <div class="reg-cell">
+          <div class="reg-name" style="color: var(--rbp-color)">RBP</div>
+          <div class="reg-val" id="r-rbp">0x7FFF0000</div>
+          <div class="reg-desc">base pointer — frame base</div>
+        </div>
+        <div class="reg-cell">
+          <div class="reg-name">Allocated</div>
+          <div class="reg-val" id="r-alloc">0 bytes</div>
+          <div class="reg-desc">total frame size</div>
+        </div>
+        <div class="reg-cell">
+          <div class="reg-name">Variables</div>
+          <div class="reg-val" id="r-count">0</div>
+          <div class="reg-desc">declared in scope</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Stack -->
+  <div class="card">
+    <div class="card-header">
+      <span>Stack — high ↓ low address</span>
+      <span id="frame-size" style="font-size:11px;color:var(--dim)"></span>
+    </div>
+    <div class="stack-outer">
+      <div id="stack" class="stack-visual">
+        <div class="empty">// declare some variables<br>// then hit Compile &amp; Run</div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--int-bg);border:1px solid var(--int)"></span>int / long</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--float-bg);border:1px solid var(--float)"></span>float / double</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--char-bg);border:1px solid var(--char)"></span>char</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--bool-bg);border:1px solid var(--bool)"></span>bool</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--ptr-bg);border:1px solid var(--ptr)"></span>pointer</div>
+    </div>
+    <div class="hint">Stack grows downward. Addresses decrease as variables are allocated. RSP = RBP − total bytes used.</div>
+  </div>
+
+</div>
+
+<script>
+const BASE = 0x7FFF0000;
+
+const TYPES = {
+  'int':           { size: 4,  color: 'int'   },
+  'unsigned int':  { size: 4,  color: 'int'   },
+  'short':         { size: 2,  color: 'int'   },
+  'long':          { size: 8,  color: 'long'  },
+  'long long':     { size: 8,  color: 'long'  },
+  'unsigned long': { size: 8,  color: 'long'  },
+  'float':         { size: 4,  color: 'float' },
+  'double':        { size: 8,  color: 'float' },
+  'char':          { size: 1,  color: 'char'  },
+  'bool':          { size: 1,  color: 'bool'  },
+};
+
+const PRESETS = {
+  basics:   `int x = 5;\nfloat y = 3.14;\nchar c = 'A';\nbool flag = true;`,
+  mixed:    `int counter = 0;\ndouble pi = 3.14159;\nchar grade = 'B';\nint score = 95;\nbool passed = true;`,
+  pointers: `int value = 42;\nint* ptr = &value;\ndouble ratio = 0.75;\nchar letter = 'Z';`,
+  padding:  `char a = 'x';\nint b = 10;\nchar c = 'y';\ndouble d = 2.718;\nbool e = false;`,
+};
+
+function load(k) { document.getElementById('code').value = PRESETS[k]; run(); }
+
+function hex(n) { return '0x' + n.toString(16).toUpperCase().padStart(8, '0'); }
+
+const DECL = /^(unsigned long|unsigned int|long long|long|double|float|short|bool|char|int)\s*(\*)?\s*([a-zA-Z_]\w*)\s*(?:=\s*(.+?))?\s*;$/;
+
+function parse(src) {
+  const vars = [], errs = [];
+  for (const raw of src.split('\n')) {
+    const line = raw.trim();
+    if (!line || line.startsWith('//')) continue;
+    const m = DECL.exec(line);
+    if (m) {
+      const baseType = m[1], isPtr = !!m[2], name = m[3], val = (m[4] || '').trim();
+      const info = isPtr ? { size: 8, color: 'ptr' } : (TYPES[baseType] || { size: 4, color: 'int' });
+      vars.push({ type: isPtr ? baseType + '*' : baseType, name, val: val || '?', size: info.size, color: info.color });
+    } else {
+      errs.push(line);
+    }
+  }
+  return { vars, errs };
+}
+
+function run() {
+  const { vars, errs } = parse(document.getElementById('code').value);
+  const errEl = document.getElementById('err');
+
+  if (errs.length) {
+    errEl.textContent = 'Parse error: ' + errs.join(' | ');
+    errEl.classList.add('show');
+  } else {
+    errEl.classList.remove('show');
+  }
+
+  if (!vars.length) {
+    document.getElementById('stack').innerHTML = '<div class="empty">// no variables declared yet</div>';
+    updateRegs(0, 0);
+    document.getElementById('frame-size').textContent = '';
+    return;
+  }
+
+  let offset = 0;
+  const rows = vars.map(v => { const addr = BASE - offset - v.size; offset += v.size; return { ...v, addr }; });
+  const total = offset;
+  const rsp = BASE - total;
+
+  let html = '';
+
+  html += `<div class="stack-rsp-marker">
+    <span class="arrow">&#9660;</span>
+    <span class="label">RSP = ${hex(rsp)}</span>
+    <span style="font-size:10px;color:var(--dim);margin-left:auto;font-family:var(--font-code)">top of stack</span>
+  </div>`;
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const v = rows[i];
+    const c = v.color;
+    const bg  = `var(--${c}-bg)`;
+    const fg  = `var(--${c})`;
+    html += `<div class="stack-row">
+      <span class="type-badge" style="background:${bg};color:${fg};border:1px solid ${fg};">${v.type}</span>
+      <span class="var-name">${v.name}</span>
+      <span class="var-val">= <span>${v.val}</span></span>
+      <div class="var-meta">${hex(v.addr)}<br>${v.size}B</div>
+    </div>`;
+  }
+
+  html += `<div class="rbp-row">
+    <span class="label">RBP = ${hex(BASE)}</span>
+    <span class="sublabel">saved frame base</span>
+  </div>`;
+
+  document.getElementById('stack').innerHTML = html;
+  document.getElementById('frame-size').textContent = total + ' bytes';
+  updateRegs(rsp, total, vars.length);
+}
+
+function updateRegs(rsp, total, count) {
+  document.getElementById('r-rsp').textContent   = hex(rsp || BASE);
+  document.getElementById('r-rbp').textContent   = hex(BASE);
+  document.getElementById('r-alloc').textContent = (total || 0) + ' bytes';
+  document.getElementById('r-count').textContent = count || 0;
+}
+
+function clearAll() {
+  document.getElementById('code').value = '';
+  document.getElementById('stack').innerHTML = '<div class="empty">// declare some variables<br>// then hit Compile & Run</div>';
+  document.getElementById('err').classList.remove('show');
+  document.getElementById('frame-size').textContent = '';
+  updateRegs(0, 0, 0);
+}
+
+run();
+</script>
+</body>
+</html>

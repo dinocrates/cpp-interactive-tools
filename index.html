@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Interactive Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0f14;
+  --s1: #131720;
+  --s2: #1a2030;
+  --border: #252d40;
+  --border2: #303d55;
+  --text: #d8e4f8;
+  --muted: #7080a0;
+  --dim: #3a4a62;
+  --green: #4ade80;
+  --blue: #79c0ff;
+  --purple: #c084fc;
+  --amber: #fbbd23;
+  --red: #f87171;
+  --cyan: #67e8f9;
+  --code: 'JetBrains Mono', monospace;
+  --ui: 'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 72px 24px 56px;
+  text-align: center;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 60%, rgba(121,192,255,.05) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 70% 40%, rgba(192,132,252,.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  font-family: var(--code);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green);
+  background: rgba(74,222,128,.08);
+  border: 1px solid rgba(74,222,128,.2);
+  border-radius: 20px;
+  padding: 4px 14px;
+  margin-bottom: 20px;
+  letter-spacing: .04em;
+}
+
+.hero h1 {
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 600;
+  letter-spacing: -.03em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.hero h1 span { color: var(--blue); }
+
+.hero p {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 520px;
+  margin: 0 auto 32px;
+  font-weight: 400;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  font-family: var(--code);
+  font-size: 12px;
+  color: var(--dim);
+}
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+.hero-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ── SECTION ── */
+.section {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+  font-family: var(--code);
+}
+.section-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── CARDS ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color .15s, background .15s, transform .15s;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--blue));
+  opacity: 0;
+  transition: opacity .2s;
+}
+.card:hover { background: var(--s2); border-color: var(--border2); transform: translateY(-2px); }
+.card:hover::before { opacity: 1; }
+
+.card-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  background: var(--card-icon-bg, rgba(121,192,255,.1));
+  border: 1px solid var(--card-icon-bd, rgba(121,192,255,.2));
+  flex-shrink: 0;
+}
+
+.card-top { display: flex; align-items: flex-start; gap: 12px; }
+.card-title-wrap { flex: 1; }
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  letter-spacing: -.01em;
+}
+.card-course {
+  font-size: 11px;
+  font-family: var(--code);
+  color: var(--muted);
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.card-tags {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.tag {
+  font-family: var(--code);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--dim);
+  font-family: var(--code);
+}
+.card-launch {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500;
+  color: var(--card-accent, var(--blue));
+}
+.card-launch::after { content: '→'; transition: transform .15s; }
+.card:hover .card-launch::after { transform: translateX(3px); }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); }
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 32px 24px;
+  font-size: 12px;
+  color: var(--dim);
+  font-family: var(--code);
+  border-top: 1px solid var(--border);
+}
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-eyebrow">C++ Interactive Tools</div>
+  <h1>Learn C++ by <span>seeing</span> the machine.</h1>
+  <p>Interactive visualizers for C++ memory, pointers, objects, STL, and control flow. Click a demo to open it — each one runs entirely in your browser, no setup needed.</p>
+  <div class="hero-meta">
+    <span><span class="hero-dot" style="background:var(--green)"></span>5 tools</span>
+    <span><span class="hero-dot" style="background:var(--blue)"></span>C++17</span>
+    <span><span class="hero-dot" style="background:var(--purple)"></span>No install required</span>
+  </div>
+</div>
+
+<div class="section">
+
+  <div class="section-header">
+    <span class="section-label">Memory Model</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="card-grid">
+
+    <a class="card" href="demos/cpp-stack-visualizer.html" style="--card-accent:var(--blue);--card-icon-bg:rgba(121,192,255,.1);--card-icon-bd:rgba(121,192,255,.2)">
+      <div class="card-top">
+        <div class="card-icon">📦</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Stack Variable Visualizer</div>
+    <span class="card-course">C++ · Memory</span>
+        </div>
+      </div>
+      <div class="card-desc">Declare variables and watch them get pushed onto the stack frame in real time. See RSP/RBP update, addresses assigned, and byte sizes laid out.</div>
+      <div class="card-tags">
+        <span class="tag">int</span><span class="tag">float</span><span class="tag">char</span><span class="tag">bool</span><span class="tag">pointer</span><span class="tag">RSP/RBP</span>
+      </div>
+      <div class="card-footer">
+        <span>x86-64 · main() frame</span>
+        <span class="card-launch">Open</span>
+      </div>
+    </a>
+
+    <a class="card" href="demos/cpp-pointer-explorer.html" style="--card-accent:var(--green);--card-icon-bg:rgba(74,222,128,.1);--card-icon-bd:rgba(74,222,128,.2)">
+      <div class="card-top">
+        <div class="card-icon">🔗</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Pointer & Reference Explorer</div>
+          <div class="card-course">C++ · Pointers</div>
+        </div>
+      </div>
+      <div class="card-desc">Visualize the three distinct values of a pointer: where it lives, what address it holds, and what dereferencing it gives you. Supports null, reference aliases, and double pointers.</div>
+      <div class="card-tags">
+        <span class="tag">*ptr</span><span class="tag">&amp;ref</span><span class="tag">nullptr</span><span class="tag">**dbl</span><span class="tag">deref</span>
+      </div>
+      <div class="card-footer">
+        <span>click cells to inspect</span>
+        <span class="card-launch">Open</span>
+      </div>
+    </a>
+
+    <a class="card" href="demos/cpp-vector-visualizer.html" style="--card-accent:var(--purple);--card-icon-bg:rgba(192,132,252,.1);--card-icon-bd:rgba(192,132,252,.2)">
+      <div class="card-top">
+        <div class="card-icon">📊</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Vector Internals Visualizer</div>
+          <div class="card-course">C++ · STL · Memory</div>
+        </div>
+      </div>
+      <div class="card-desc">See inside std::vector — the stack object's three fields, the heap buffer, and live reallocation events as capacity doubles. Try push_back, reserve, resize, erase, and more.</div>
+      <div class="card-tags">
+        <span class="tag">push_back</span><span class="tag">reserve</span><span class="tag">resize</span><span class="tag">erase</span><span class="tag">realloc</span>
+      </div>
+      <div class="card-footer">
+        <span>size · capacity · data*</span>
+        <span class="card-launch">Open</span>
+      </div>
+    </a>
+
+    <a class="card" href="demos/cpp-object-visualizer.html" style="--card-accent:var(--amber);--card-icon-bg:rgba(251,189,35,.1);--card-icon-bd:rgba(251,189,35,.2)">
+      <div class="card-top">
+        <div class="card-icon">🏛️</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Object & Class Visualizer</div>
+          <div class="card-course">C++ · OOP</div>
+        </div>
+      </div>
+      <div class="card-desc">Paste any class definition and see its UML structure, memory layout with padding, and why methods live in the code segment — not inside each object instance.</div>
+      <div class="card-tags">
+        <span class="tag">public</span><span class="tag">private</span><span class="tag">protected</span><span class="tag">static</span><span class="tag">this*</span><span class="tag">sizeof</span>
+      </div>
+      <div class="card-footer">
+        <span>UML · heap layout · code seg</span>
+        <span class="card-launch">Open</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="section-header" style="margin-top:48px">
+    <span class="section-label">Logic & Control Flow</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="card-grid">
+
+    <a class="card" href="demos/cpp-flowchart-visualizer.html" style="--card-accent:var(--cyan);--card-icon-bg:rgba(103,232,249,.1);--card-icon-bd:rgba(103,232,249,.2)">
+      <div class="card-top">
+        <div class="card-icon">🔀</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Flowchart Visualizer</div>
+          <div class="card-course">C++ · Control Flow</div>
+        </div>
+      </div>
+      <div class="card-desc">Write C++ control flow code and instantly see it as a flowchart — or build logic visually with the block builder and generate code. Supports if/else, while, for, do-while, and switch.</div>
+      <div class="card-tags">
+        <span class="tag">if/else</span><span class="tag">while</span><span class="tag">for</span><span class="tag">do-while</span><span class="tag">switch</span>
+      </div>
+      <div class="card-footer">
+        <span>code→chart · chart→code</span>
+        <span class="card-launch">Open</span>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+<footer>
+  Built for classroom use · All tools run locally in the browser · No data sent anywhere
+  <br style="margin-bottom:6px">
+  <a href="https://github.com/YOUR-USERNAME/cpp-interactive-tools">github.com/YOUR-USERNAME/cpp-interactive-tools</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Vector Internals Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7080a0; --dim:#2e3a52;
+  --filled:#1a3a5c; --filled-bd:#79c0ff; --filled-text:#a8d4ff;
+  --cap:#1a2a1a;   --cap-bd:#3a5a3a;   --cap-text:#4a7a4a;
+  --free:#141620;  --free-bd:#252d40;
+  --green:#4ade80; --red:#f87171; --amber:#fbbd23;
+  --purple:#c084fc; --cyan:#67e8f9; --blue:#79c0ff;
+  --realloc:#fb923c;
+  --r:8px; --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;gap:14px;flex-shrink:0}
+header h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+header p{font-size:12px;color:var(--muted);font-family:var(--code)}
+
+.main{flex:1;display:grid;grid-template-columns:260px 1fr 260px;gap:0;min-height:0}
+
+/* ── LEFT: Controls ── */
+.controls{background:var(--s1);border-right:1px solid var(--border);padding:0;display:flex;flex-direction:column;overflow-y:auto}
+.ctrl-section{padding:12px 14px;border-bottom:1px solid var(--border)}
+.ctrl-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.op-grid{display:flex;flex-direction:column;gap:5px}
+.op-row{display:flex;gap:6px;align-items:center}
+.op-row input{flex:1;font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);outline:none;min-width:0}
+.op-row input:focus{border-color:var(--blue)}
+.op-row input::placeholder{color:var(--dim)}
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:5px 11px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s;white-space:nowrap}
+button:hover{background:var(--border2)}
+button:active{transform:scale(.97)}
+.btn-push{background:#0f2a14;border-color:var(--green);color:var(--green)}
+.btn-push:hover{background:#163820}
+.btn-pop{background:#2a1010;border-color:var(--red);color:var(--red)}
+.btn-pop:hover{background:#3a1515}
+.btn-insert{background:#14201a;border-color:var(--cyan);color:var(--cyan)}
+.btn-insert:hover{background:#1a2e24}
+.btn-erase{background:#2a1818;border-color:var(--amber);color:var(--amber)}
+.btn-erase:hover{background:#3a2010}
+.btn-reserve{background:#1a1030;border-color:var(--purple);color:var(--purple)}
+.btn-reserve:hover{background:#221440}
+.btn-resize{background:#1a1828;border-color:#818cf8;color:#818cf8}
+.btn-resize:hover{background:#222038}
+.btn-clear{background:#2a1020;border-color:#e879f9;color:#e879f9}
+.btn-clear:hover{background:#381430}
+.btn-shrink{background:#1a1a10;border-color:#a3e635;color:#a3e635}
+.btn-shrink:hover{background:#252510}
+
+.presets{display:flex;flex-direction:column;gap:4px}
+.preset{font-size:11px;padding:5px 10px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;text-align:left;font-family:var(--code)}
+.preset:hover{color:var(--text);border-color:var(--muted);background:var(--s3)}
+
+/* ── CENTER: Visualization ── */
+.viz{padding:20px 24px;overflow-y:auto;background:var(--bg)}
+
+.region-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.region-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Stack object */
+.stack-obj{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:20px}
+.stack-obj-header{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-family:var(--code);display:flex;justify-content:space-between}
+.stack-fields{display:grid;grid-template-columns:1fr 1fr 1fr}
+.stack-field{padding:12px 14px;border-right:1px solid var(--border)}
+.stack-field:last-child{border-right:none}
+.sf-label{font-size:10px;color:var(--dim);font-family:var(--code);margin-bottom:4px}
+.sf-name{font-size:12px;font-weight:600;font-family:var(--code);color:var(--muted);margin-bottom:4px}
+.sf-val{font-size:15px;font-weight:600;font-family:var(--code);transition:color .3s}
+
+/* Heap buffer */
+.heap-area{margin-bottom:20px}
+.buffer-wrap{display:flex;flex-direction:column;gap:10px}
+.buffer-row{display:flex;align-items:center;gap:8px}
+.buffer-label{font-size:10px;font-family:var(--code);color:var(--dim);width:70px;flex-shrink:0;text-align:right}
+.cells{display:flex;gap:4px;flex-wrap:wrap}
+.cell{
+  width:52px;height:48px;border-radius:5px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid var(--free-bd);background:var(--free);
+  transition:all .3s ease;position:relative;cursor:default;
+  font-family:var(--code);
+}
+.cell.filled{background:var(--filled);border-color:var(--filled-bd)}
+.cell.cap-only{background:var(--cap);border-color:var(--cap-bd)}
+.cell-val{font-size:13px;font-weight:600;color:var(--filled-text)}
+.cell-idx{font-size:9px;color:var(--dim);position:absolute;bottom:3px;right:4px}
+.cell.new-elem{animation:popIn .35s cubic-bezier(.34,1.56,.64,1)}
+.cell.removing{animation:fadeOut .25s ease forwards}
+.cell.realloc-new{animation:slideIn .3s ease}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes fadeOut{to{opacity:0;transform:scale(.8)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.cell.flash{animation:flashCell .4s ease}
+@keyframes flashCell{0%,100%{background:var(--filled)}50%{background:#1a3a2a;border-color:var(--green)}}
+
+.cell.cap-only .cell-val{color:var(--cap-text);font-size:10px;font-style:italic}
+
+.realloc-notice{
+  padding:8px 12px;border-radius:6px;font-size:12px;font-family:var(--code);
+  background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:var(--realloc);
+  margin-bottom:10px;display:none;animation:slideIn .3s ease;
+}
+.realloc-notice.show{display:block}
+
+.data-ptr-arrow{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-family:var(--code);color:var(--dim);
+  margin-bottom:8px;padding:0 4px;
+}
+.ptr-val{color:var(--blue);font-weight:500}
+
+/* Legend */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-box{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.stat-card{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;font-family:var(--code)}
+.stat-val{font-size:18px;font-weight:600;font-family:var(--code)}
+
+/* ── RIGHT: Log ── */
+.log-panel{background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.log-head{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.log-clear-btn{font-size:10px;padding:2px 8px;border-radius:3px}
+.log-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px}
+.log-entry{
+  padding:7px 10px;border-radius:5px;font-family:var(--code);font-size:11px;
+  line-height:1.5;border-left:3px solid transparent;background:var(--s2);
+  animation:logSlide .2s ease;
+}
+@keyframes logSlide{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.op{border-left-color:var(--blue);color:var(--text)}
+.log-entry.realloc{border-left-color:var(--realloc);color:var(--realloc)}
+.log-entry.warn{border-left-color:var(--red);color:var(--red)}
+.log-entry.info{border-left-color:var(--dim);color:var(--muted)}
+.log-entry .log-call{font-weight:600;color:var(--blue)}
+.log-entry.realloc .log-call{color:var(--realloc)}
+.log-ts{color:var(--dim);margin-right:6px}
+
+/* Code snippet preview */
+.code-preview{
+  padding:10px 14px;border-top:1px solid var(--border);background:#080b10;
+  font-family:var(--code);font-size:12px;line-height:1.8;
+  flex-shrink:0;min-height:80px;max-height:120px;overflow-y:auto;
+}
+.kw{color:#ff7b72}.tp{color:#79c0ff}.fn{color:#d2a8ff}.nm{color:#e6edf3}.cm{color:#3a4a62}.num{color:#79c0ff}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>C++ Vector Internals</h1>
+    <p>size · capacity · heap buffer · reallocation</p>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- LEFT: Controls -->
+  <div class="controls">
+    <div class="ctrl-section">
+      <div class="ctrl-title">Add / Remove</div>
+      <div class="op-grid">
+        <div class="op-row">
+          <input id="val-push" type="text" placeholder="value" maxlength="6"/>
+          <button class="btn-push" onclick="doPush()">push_back</button>
+        </div>
+        <div class="op-row">
+          <button class="btn-pop" style="width:100%" onclick="doPop()">pop_back()</button>
+        </div>
+        <div class="op-row">
+          <input id="val-insert" type="text" placeholder="val" maxlength="5" style="width:52px;flex:none"/>
+          <span style="font-size:11px;color:var(--dim)">@</span>
+          <input id="idx-insert" type="number" placeholder="idx" min="0" style="width:48px;flex:none"/>
+          <button class="btn-insert" onclick="doInsert()">insert</button>
+        </div>
+        <div class="op-row">
+          <input id="idx-erase" type="number" placeholder="index" min="0"/>
+          <button class="btn-erase" onclick="doErase()">erase</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-title">Memory</div>
+      <div class="op-grid">
+        <div class="op-row">
+          <input id="val-reserve" type="number" placeholder="n" min="0" max="32"/>
+          <button class="btn-reserve" onclick="doReserve()">reserve(n)</button>
+        </div>
+        <div class="op-row">
+          <input id="val-resize" type="number" placeholder="n" min="0" max="24"/>
+          <button class="btn-resize" onclick="doResize()">resize(n)</button>
+        </div>
+        <div class="op-row">
+          <button class="btn-shrink" style="width:100%" onclick="doShrink()">shrink_to_fit()</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <div class="ctrl-title">Other</div>
+      <div class="op-grid">
+        <div class="op-row">
+          <button class="btn-clear" style="width:100%" onclick="doClear()">clear()</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section" style="flex:1">
+      <div class="ctrl-title">Step-by-step Scenarios</div>
+      <div class="presets">
+        <button class="preset" onclick="runScenario('realloc')">📈 Watch reallocation happen</button>
+        <button class="preset" onclick="runScenario('reserve')">⚡ reserve() avoids realloc</button>
+        <button class="preset" onclick="runScenario('insert')">🔀 insert &amp; erase</button>
+        <button class="preset" onclick="runScenario('shrink')">📦 shrink_to_fit()</button>
+        <button class="preset" onclick="runScenario('reset')">↺ Reset / empty vector</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: Visualization -->
+  <div class="viz">
+
+    <div class="legend">
+      <div class="leg"><span class="leg-box" style="background:var(--filled);border:1px solid var(--filled-bd)"></span>filled (size)</div>
+      <div class="leg"><span class="leg-box" style="background:var(--cap);border:1px solid var(--cap-bd)"></span>allocated capacity</div>
+      <div class="leg"><span class="leg-box" style="background:var(--free);border:1px solid var(--border2)"></span>unallocated</div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-label">size()</div><div class="stat-val" id="stat-size" style="color:var(--blue)">0</div></div>
+      <div class="stat-card"><div class="stat-label">capacity()</div><div class="stat-val" id="stat-cap" style="color:var(--purple)">0</div></div>
+      <div class="stat-card"><div class="stat-label">free slots</div><div class="stat-val" id="stat-free" style="color:var(--cap-text)">0</div></div>
+      <div class="stat-card"><div class="stat-label">reallocations</div><div class="stat-val" id="stat-realloc" style="color:var(--realloc)">0</div></div>
+    </div>
+
+    <!-- Stack object -->
+    <div class="region-label">Stack — vector&lt;int&gt; v object (24 bytes)</div>
+    <div class="stack-obj" style="margin-bottom:20px">
+      <div class="stack-obj-header">
+        <span>main() frame</span>
+        <span style="color:var(--dim)">0x7FFF0010</span>
+      </div>
+      <div class="stack-fields">
+        <div class="stack-field">
+          <div class="sf-label">field</div>
+          <div class="sf-name">data*</div>
+          <div class="sf-val" id="sf-data" style="color:var(--blue)">nullptr</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)">→ heap buffer</div>
+        </div>
+        <div class="stack-field">
+          <div class="sf-label">field</div>
+          <div class="sf-name">size</div>
+          <div class="sf-val" id="sf-size" style="color:var(--green)">0</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)">elements used</div>
+        </div>
+        <div class="stack-field">
+          <div class="sf-label">field</div>
+          <div class="sf-name">capacity</div>
+          <div class="sf-val" id="sf-cap" style="color:var(--purple)">0</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;font-family:var(--code)">slots allocated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heap buffer -->
+    <div class="region-label">Heap — internal buffer pointed to by data*</div>
+    <div id="realloc-notice" class="realloc-notice"></div>
+
+    <div class="heap-area">
+      <div class="data-ptr-arrow">
+        <span>data* →</span>
+        <span class="ptr-val" id="heap-addr">nullptr</span>
+        <span style="margin-left:8px;color:var(--dim)">(heap address of buffer)</span>
+      </div>
+      <div class="buffer-wrap" id="buffer-wrap">
+        <div style="color:var(--dim);font-family:var(--code);font-size:12px;padding:16px 0">
+          // vector is empty — no heap allocation yet
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Log -->
+  <div class="log-panel">
+    <div class="log-head">
+      <span>Operation Log</span>
+      <button class="log-clear-btn" onclick="clearLog()">clear</button>
+    </div>
+    <div class="log-body" id="log-body"></div>
+    <div class="code-preview" id="code-preview">
+      <span class="cm">// code will appear here</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ─── STATE ────────────────────────────────────────────────────────
+let vec = [];          // actual values
+let capacity = 0;      // allocated capacity
+let reallocCount = 0;
+let stepTimer = null;
+let heapBase = 0x3a000;
+
+// ─── HELPERS ──────────────────────────────────────────────────────
+function hex(n){ return '0x' + n.toString(16).toUpperCase(); }
+
+function log(msg, type='op', codeSnip=''){
+  const body = document.getElementById('log-body');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  const ts = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  entry.innerHTML = `<span class="log-ts">${ts}</span>${msg}`;
+  body.insertBefore(entry, body.firstChild);
+  if(codeSnip) showCode(codeSnip);
+}
+
+function showCode(html){
+  document.getElementById('code-preview').innerHTML = html;
+}
+
+function flashStat(id){
+  const el = document.getElementById(id);
+  el.style.transition = 'none';
+  el.style.color = '#fff';
+  setTimeout(()=>{ el.style.transition = 'color .5s'; el.style.color = ''; }, 50);
+}
+
+function updateStats(){
+  document.getElementById('stat-size').textContent = vec.length;
+  document.getElementById('stat-cap').textContent = capacity;
+  document.getElementById('stat-free').textContent = capacity - vec.length;
+  document.getElementById('stat-realloc').textContent = reallocCount;
+  document.getElementById('sf-size').textContent = vec.length;
+  document.getElementById('sf-cap').textContent = capacity;
+  document.getElementById('sf-data').textContent = capacity > 0 ? hex(heapBase) : 'nullptr';
+  document.getElementById('heap-addr').textContent = capacity > 0 ? hex(heapBase) : 'nullptr';
+}
+
+// ─── RENDER BUFFER ────────────────────────────────────────────────
+function renderBuffer(newElemIdx=-1, removingIdx=-1){
+  const wrap = document.getElementById('buffer-wrap');
+  if(capacity === 0){
+    wrap.innerHTML = `<div style="color:var(--dim);font-family:var(--code);font-size:12px;padding:16px 0">// no heap allocation — capacity is 0</div>`;
+    return;
+  }
+
+  // Show up to 24 slots visible, the rest summarized
+  const maxShow = 24;
+  let html = `<div class="buffer-row"><span class="buffer-label">${hex(heapBase)}</span><div class="cells">`;
+
+  for(let i = 0; i < Math.min(capacity, maxShow); i++){
+    const isFilled = i < vec.length;
+    const isNew = i === newElemIdx;
+    const isRemoving = i === removingIdx;
+    let cls = 'cell';
+    if(isFilled) cls += ' filled';
+    else if(i < capacity) cls += ' cap-only';
+    if(isNew) cls += ' new-elem';
+    if(isRemoving) cls += ' removing';
+
+    const valText = isFilled ? vec[i] : '—';
+    html += `<div class="${cls}">
+      <span class="cell-val">${isFilled ? valText : '<span style="color:var(--dim);font-size:10px">free</span>'}</span>
+      <span class="cell-idx">[${i}]</span>
+    </div>`;
+  }
+  if(capacity > maxShow){
+    html += `<div style="align-self:center;font-size:11px;color:var(--dim);font-family:var(--code);padding:0 6px">…+${capacity-maxShow} more</div>`;
+  }
+  html += '</div></div>';
+
+  // Size/capacity visual indicator below
+  html += `<div style="display:flex;align-items:center;gap:10px;padding:4px 0 0 78px;font-size:11px;font-family:var(--code)">
+    <span style="color:var(--blue)">├── size: ${vec.length} filled ──┤</span>
+    <span style="color:var(--cap-text)">${capacity > vec.length ? `├─ capacity: ${capacity-vec.length} free ─┤` : ''}</span>
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+
+function showRealloc(oldCap, newCap){
+  const notice = document.getElementById('realloc-notice');
+  notice.textContent = `⚡ Reallocation! capacity ${oldCap} → ${newCap} (buffer moved from ${hex(heapBase - 0x1000)} to ${hex(heapBase)})`;
+  notice.classList.add('show');
+  setTimeout(()=> notice.classList.remove('show'), 3500);
+}
+
+// ─── OPERATIONS ───────────────────────────────────────────────────
+function grow(){
+  const oldCap = capacity;
+  capacity = capacity === 0 ? 1 : capacity * 2;
+  heapBase += 0x1000; // simulate new allocation address
+  reallocCount++;
+  showRealloc(oldCap, capacity);
+  log(`<span class="log-call">⚡ REALLOCATION</span> — capacity was ${oldCap}, doubled to ${capacity}. Old buffer freed, all ${vec.length} elements copied to new buffer at ${hex(heapBase)}.`, 'realloc');
+  document.getElementById('sf-data').style.color = 'var(--realloc)';
+  setTimeout(()=>{ document.getElementById('sf-data').style.color = 'var(--blue)'; }, 1000);
+}
+
+function doPush(){
+  const raw = document.getElementById('val-push').value.trim() || String(Math.floor(Math.random()*100));
+  const val = isNaN(raw) ? raw : Number(raw);
+  const didRealloc = vec.length >= capacity;
+  if(didRealloc) grow();
+  vec.push(val);
+  renderBuffer(vec.length - 1);
+  updateStats();
+  flashStat('stat-size');
+  if(!didRealloc) log(`<span class="log-call">push_back(${val})</span> — appended at index [${vec.length-1}]. size: ${vec.length-1}→${vec.length}, capacity unchanged: ${capacity}`, 'op');
+  showCode(pushCode(val));
+  document.getElementById('val-push').value = '';
+}
+
+function doPop(){
+  if(vec.length === 0){ log('⚠ pop_back() on empty vector — undefined behavior!', 'warn'); return; }
+  const old = vec[vec.length-1];
+  renderBuffer(-1, vec.length-1);
+  setTimeout(()=>{
+    vec.pop();
+    renderBuffer();
+    updateStats();
+    flashStat('stat-size');
+    log(`<span class="log-call">pop_back()</span> — removed ${old} from index [${vec.length}]. size: ${vec.length+1}→${vec.length}, capacity unchanged: ${capacity}`, 'op');
+  }, 280);
+  showCode(`<span class="nm">v</span>.<span class="fn">pop_back</span>();  <span class="cm">// removes last element</span>\n<span class="cm">// size: ${vec.length} → ${vec.length-1}, capacity: ${capacity} (unchanged)</span>`);
+}
+
+function doInsert(){
+  const raw = document.getElementById('val-insert').value.trim() || '0';
+  const val = isNaN(raw) ? raw : Number(raw);
+  let idx = parseInt(document.getElementById('idx-insert').value);
+  if(isNaN(idx)) idx = vec.length;
+  idx = Math.max(0, Math.min(idx, vec.length));
+  const didRealloc = vec.length >= capacity;
+  if(didRealloc) grow();
+  vec.splice(idx, 0, val);
+  renderBuffer(idx);
+  updateStats();
+  flashStat('stat-size');
+  log(`<span class="log-call">insert([${idx}], ${val})</span> — inserted at index ${idx}. Elements [${idx}..${vec.length-2}] shifted right. size: ${vec.length-1}→${vec.length}`, 'op');
+  showCode(insertCode(idx, val));
+  document.getElementById('val-insert').value = '';
+  document.getElementById('idx-insert').value = '';
+}
+
+function doErase(){
+  const idx = parseInt(document.getElementById('idx-erase').value);
+  if(isNaN(idx)||idx<0||idx>=vec.length){ log(`⚠ erase(${idx}) — index out of range [0, ${vec.length-1}]`, 'warn'); return; }
+  const old = vec[idx];
+  renderBuffer(-1, idx);
+  setTimeout(()=>{
+    vec.splice(idx,1);
+    renderBuffer();
+    updateStats();
+    flashStat('stat-size');
+    log(`<span class="log-call">erase([${idx}])</span> — removed ${old}. Elements after [${idx}] shifted left. size: ${vec.length+1}→${vec.length}, capacity: ${capacity}`, 'op');
+  }, 280);
+  showCode(eraseCode(idx));
+  document.getElementById('idx-erase').value = '';
+}
+
+function doReserve(){
+  const n = parseInt(document.getElementById('val-reserve').value);
+  if(isNaN(n)||n<0||n>64){ log('⚠ reserve() — enter a value 0-64', 'warn'); return; }
+  if(n <= capacity){
+    log(`<span class="log-call">reserve(${n})</span> — no-op: requested ${n} ≤ current capacity ${capacity}. Nothing changes.`, 'info');
+    showCode(`<span class="nm">v</span>.<span class="fn">reserve</span>(<span class="num">${n}</span>);  <span class="cm">// no-op: ${n} ≤ capacity ${capacity}</span>`);
+    return;
+  }
+  const old = capacity; const oldBase = heapBase;
+  capacity = n;
+  heapBase += 0x800;
+  reallocCount++;
+  showRealloc(old, n);
+  renderBuffer();
+  updateStats();
+  flashStat('stat-cap');
+  log(`<span class="log-call">reserve(${n})</span> — capacity ${old}→${n}. Buffer reallocated at ${hex(heapBase)}. Size unchanged: ${vec.length}`, 'realloc');
+  showCode(reserveCode(n));
+  document.getElementById('val-reserve').value = '';
+}
+
+function doResize(){
+  const n = parseInt(document.getElementById('val-resize').value);
+  if(isNaN(n)||n<0||n>32){ log('⚠ resize() — enter a value 0-32', 'warn'); return; }
+  const oldSize = vec.length;
+  if(n > capacity){
+    const old = capacity;
+    capacity = Math.max(n, capacity * 2 || 1);
+    heapBase += 0x1000;
+    reallocCount++;
+    showRealloc(old, capacity);
+  }
+  while(vec.length < n) vec.push(0);
+  while(vec.length > n) vec.pop();
+  renderBuffer();
+  updateStats();
+  flashStat('stat-size'); flashStat('stat-cap');
+  log(`<span class="log-call">resize(${n})</span> — size ${oldSize}→${n}. ${n > oldSize ? `Added ${n-oldSize} zero-initialized elements.` : n < oldSize ? `Removed ${oldSize-n} elements from end.` : 'No change in size.'}`, 'op');
+  showCode(resizeCode(n));
+  document.getElementById('val-resize').value = '';
+}
+
+function doShrink(){
+  if(capacity === vec.length){ log(`<span class="log-call">shrink_to_fit()</span> — no-op: capacity already equals size (${capacity}).`, 'info'); return; }
+  const old = capacity;
+  capacity = vec.length;
+  if(capacity > 0){ heapBase += 0x400; reallocCount++; }
+  renderBuffer();
+  updateStats();
+  flashStat('stat-cap');
+  log(`<span class="log-call">shrink_to_fit()</span> — capacity ${old}→${capacity}. Buffer reallocated to fit exactly. Freed ${old-capacity} unused slots.`, 'realloc');
+  showCode(`<span class="nm">v</span>.<span class="fn">shrink_to_fit</span>();\n<span class="cm">// capacity: ${old} → ${capacity} (freed ${old-capacity} slots)</span>`);
+}
+
+function doClear(){
+  const oldSize = vec.length;
+  vec = [];
+  renderBuffer();
+  updateStats();
+  flashStat('stat-size');
+  log(`<span class="log-call">clear()</span> — all ${oldSize} elements removed. size→0. Capacity unchanged: ${capacity}.`, 'op');
+  showCode(`<span class="nm">v</span>.<span class="fn">clear</span>();\n<span class="cm">// size: ${oldSize} → 0</span>\n<span class="cm">// capacity: ${capacity} (unchanged!)</span>`);
+}
+
+function clearLog(){ document.getElementById('log-body').innerHTML = ''; }
+
+// ─── CODE SNIPPETS ────────────────────────────────────────────────
+function pushCode(val){
+  return `<span class="nm">v</span>.<span class="fn">push_back</span>(<span class="num">${val}</span>);
+<span class="cm">// size: ${vec.length-1} → ${vec.length}</span>
+<span class="cm">// capacity: ${capacity}${vec.length===capacity?` (just doubled from ${capacity/2})`:'(unchanged)'}</span>`;
+}
+function insertCode(idx, val){
+  return `<span class="kw">auto</span> it = v.<span class="fn">begin</span>() + <span class="num">${idx}</span>;
+v.<span class="fn">insert</span>(it, <span class="num">${val}</span>);
+<span class="cm">// O(n) — shifts ${vec.length-1-idx} elements right</span>`;
+}
+function eraseCode(idx){
+  return `<span class="kw">auto</span> it = v.<span class="fn">begin</span>() + <span class="num">${idx}</span>;
+v.<span class="fn">erase</span>(it);
+<span class="cm">// O(n) — shifts elements left to fill gap</span>`;
+}
+function reserveCode(n){
+  return `v.<span class="fn">reserve</span>(<span class="num">${n}</span>);
+<span class="cm">// pre-allocates ${n} slots</span>
+<span class="cm">// avoids realloc until size > ${n}</span>
+<span class="cm">// great before a loop that adds many elements</span>`;
+}
+function resizeCode(n){
+  return `v.<span class="fn">resize</span>(<span class="num">${n}</span>);
+<span class="cm">// new elements default-initialized to 0</span>
+<span class="cm">// size is now exactly ${n}</span>`;
+}
+
+// ─── SCENARIOS ────────────────────────────────────────────────────
+function stopScenario(){ if(stepTimer){ clearTimeout(stepTimer); stepTimer=null; } }
+function delay(ms){ return new Promise(r=>{ stepTimer=setTimeout(r,ms); }); }
+
+async function runScenario(name){
+  stopScenario();
+  // Reset state
+  vec=[]; capacity=0; reallocCount=0; heapBase=0x3a000;
+  renderBuffer(); updateStats();
+  clearLog();
+
+  if(name==='reset'){
+    log('Vector reset to empty state.','info');
+    showCode(`<span class="tp">vector</span>&lt;<span class="kw">int</span>&gt; <span class="nm">v</span>;\n<span class="cm">// empty — no heap allocation yet</span>`);
+    return;
+  }
+
+  if(name==='realloc'){
+    log('Scenario: watch capacity double on each reallocation','info',
+      `<span class="tp">vector</span>&lt;<span class="kw">int</span>&gt; <span class="nm">v</span>;\n<span class="cm">// push_back until we see 3 reallocations</span>`);
+    const vals = [10,20,30,40,50,60,70,80];
+    for(const val of vals){
+      await delay(900);
+      document.getElementById('val-push').value = val;
+      doPush();
+    }
+    await delay(600);
+    log('Notice: capacity went 0→1→2→4→8 — it doubles each time! This keeps push_back() amortized O(1).','info');
+    return;
+  }
+
+  if(name==='reserve'){
+    log('Scenario: reserve() prevents repeated reallocations in a loop','info');
+    await delay(600);
+    document.getElementById('val-reserve').value = 8;
+    doReserve();
+    await delay(800);
+    log('Now push 8 elements — watch: zero reallocations!','info');
+    const vals = [5,15,25,35,45,55,65,75];
+    for(const val of vals){
+      await delay(700);
+      document.getElementById('val-push').value = val;
+      doPush();
+    }
+    await delay(500);
+    log(`Total reallocations: ${reallocCount} (just the initial reserve). Without reserve: would have been 4.`,'info');
+    return;
+  }
+
+  if(name==='insert'){
+    log('Scenario: insert() and erase() with iterator positions','info');
+    for(const val of [1,2,4,5]){
+      await delay(600);
+      document.getElementById('val-push').value = val;
+      doPush();
+    }
+    await delay(900);
+    log('Now insert 3 at index 2 (between 2 and 4)','info');
+    document.getElementById('val-insert').value = 3;
+    document.getElementById('idx-insert').value = 2;
+    doInsert();
+    await delay(1000);
+    log('Now erase index 4 (the 5)','info');
+    document.getElementById('idx-erase').value = 4;
+    doErase();
+    return;
+  }
+
+  if(name==='shrink'){
+    log('Scenario: reserve large, fill few, then shrink_to_fit()','info');
+    await delay(500);
+    document.getElementById('val-reserve').value = 16;
+    doReserve();
+    await delay(800);
+    for(const val of [10,20,30]){
+      await delay(600);
+      document.getElementById('val-push').value = val;
+      doPush();
+    }
+    await delay(900);
+    log('Capacity is 16 but we only used 3 slots. shrink_to_fit() will release that memory.','info');
+    await delay(800);
+    doShrink();
+    return;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+updateStats();
+renderBuffer();
+showCode(`<span class="tp">vector</span>&lt;<span class="kw">int</span>&gt; <span class="nm">v</span>;  <span class="cm">// empty</span>\n<span class="cm">// size=0, capacity=0, data=nullptr</span>`);
+log('Vector created — empty, no heap allocation yet.','info');
+</script>
+</body>
+</html>
