@@ -3,842 +3,701 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>C++ Flowchart Visualizer</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<title>C++ String Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0c0f14;--s1:#131720;--s2:#1a2030;--s3:#212840;
-  --border:#252d40;--border2:#303d55;
-  --text:#d8e4f8;--muted:#7080a0;--dim:#384258;
-  --green:#4ade80;--red:#f87171;--blue:#79c0ff;
-  --amber:#fbbd23;--purple:#c084fc;--cyan:#67e8f9;
-  --r:8px;--code:'JetBrains Mono',monospace;--ui:'DM Sans',sans-serif;
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7080a0; --dim:#2e3a52;
+  --blue:#79c0ff; --green:#4ade80; --amber:#fbbd23;
+  --red:#f87171; --purple:#c084fc; --cyan:#67e8f9; --orange:#fb923c;
+  --cell-default-bg:#0f1825; --cell-default-bd:#2a3f58;
+  --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
+  --r:8px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0;background:var(--s1)}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:12px 24px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px;flex-wrap:wrap}
+.header-left{display:flex;align-items:center;gap:14px}
 header h1{font-size:16px;font-weight:600;letter-spacing:-.02em}
 header p{font-size:12px;color:var(--muted);font-family:var(--code)}
-.tabs{display:flex;gap:2px;margin-left:auto}
-.tab{font-size:12px;font-weight:500;padding:5px 14px;border-radius:5px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--muted);font-family:var(--ui)}
-.tab:hover{color:var(--text);background:var(--s3)}
-.tab.active{background:var(--s3);color:var(--text);border-color:var(--border2)}
-.main{flex:1;display:grid;grid-template-columns:380px 1fr;min-height:0}
-/* Editor side */
-.editor-side{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--s1)}
-.panel-head{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.dot-row{display:flex;gap:5px}
-.dot{width:10px;height:10px;border-radius:50%}
-.preset-row{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.plabel{font-size:11px;color:var(--dim)}
-.preset{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--code)}
-.preset:hover{color:var(--text);border-color:var(--muted)}
-textarea{flex:1;width:100%;background:#080b10;color:var(--text);font-family:var(--code);font-size:12.5px;line-height:1.7;padding:14px;border:none;outline:none;resize:none;tab-size:2}
-.toolbar{padding:10px 12px;background:var(--s2);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
-button{font-family:var(--ui);font-size:12px;font-weight:500;padding:6px 13px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
+
+/* Mode toggle */
+.mode-toggle{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:6px;overflow:hidden}
+.mode-btn{padding:6px 14px;font-size:12px;font-weight:500;font-family:var(--code);background:none;border:none;color:var(--muted);cursor:pointer;transition:all .15s}
+.mode-btn.active{background:var(--s3);color:var(--text)}
+
+.layout{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0}
+
+/* ── LEFT CONTROLS ── */
+.left{background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.phead{padding:9px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+
+.str-input-wrap{padding:14px}
+.str-input-label{font-size:11px;color:#8a9abb;font-family:var(--code);margin-bottom:6px}
+.str-input{width:100%;font-family:var(--code);font-size:14px;background:#080b10;border:1px solid var(--border2);border-radius:6px;padding:9px 12px;color:var(--text);outline:none;letter-spacing:.04em}
+.str-input:focus{border-color:var(--blue)}
+.str-meta{display:flex;gap:12px;margin-top:8px;font-size:11px;font-family:var(--code)}
+.str-meta span{color:#7a8fb0}
+.str-meta b{color:var(--blue)}
+
+.ops-section{padding:12px 14px;border-top:1px solid var(--border);flex:1}
+.ops-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.op-list{display:flex;flex-direction:column;gap:5px}
+
+.op-item{border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.op-header{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--s2);cursor:pointer;user-select:none}
+.op-header:hover{background:var(--s3)}
+.op-name{font-size:12px;font-weight:600;font-family:var(--code)}
+.op-chevron{font-size:10px;color:#6a80a0;transition:transform .15s}
+.op-item.open .op-chevron{transform:rotate(180deg)}
+.op-body{display:none;padding:10px;background:var(--s1);border-top:1px solid var(--border)}
+.op-item.open .op-body{display:block}
+
+.field-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.field-row:last-child{margin-bottom:0}
+.field-label{font-size:11px;color:#8a9abb;font-family:var(--code);min-width:32px;flex-shrink:0}
+input[type=text],input[type=number]{font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border2);border-radius:4px;padding:5px 8px;color:var(--text);outline:none;width:100%}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--blue)}
+input[type=number]{width:60px;flex-shrink:0}
+.op-desc{font-size:11px;color:#8090b0;font-family:var(--code);margin-bottom:8px;line-height:1.6}
+
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:5px 12px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
 button:hover{background:var(--border2)}
-.btn-run{background:#0f2a14;border-color:var(--green);color:var(--green)}
-.btn-run:hover{background:#163820}
-.err-bar{padding:6px 14px;font-family:var(--code);font-size:11px;color:var(--red);display:none;background:rgba(248,113,113,.07);border-top:1px solid rgba(248,113,113,.2);flex-shrink:0}
-.err-bar.on{display:block}
-/* Chart side */
-.chart-side{overflow:auto;background:var(--bg);position:relative}
-.chart-inner{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:24px}
-#chart-svg{display:block}
-.empty-chart{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:400px;color:var(--dim);font-family:var(--code);font-size:13px;text-align:center;gap:8px}
-/* Block Builder */
-.builder-side{display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--s1)}
-.bb-palette{padding:12px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
-.bb-btn{font-size:11px;padding:5px 11px;border-radius:5px;border:1px solid var(--border2);background:var(--s2);color:var(--muted);cursor:pointer;font-family:var(--code)}
-.bb-btn:hover{color:var(--text);border-color:var(--text)}
-.bb-blocks{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
-.bb-block{border-radius:6px;border:1px solid var(--border2);overflow:hidden;background:var(--s2)}
-.bb-block-head{padding:6px 10px;display:flex;align-items:center;gap:8px;cursor:pointer}
-.bb-icon{font-size:12px;font-family:var(--code);font-weight:600;padding:2px 6px;border-radius:3px}
-.bb-label{font-size:13px;font-weight:500}
-.bb-del{margin-left:auto;font-size:16px;line-height:1;color:var(--dim);background:none;border:none;cursor:pointer;padding:0 4px}
-.bb-del:hover{color:var(--red)}
-.bb-children{padding:0 0 6px 20px;display:flex;flex-direction:column;gap:4px}
-.bb-input{width:100%;font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);outline:none}
-.bb-input:focus{border-color:var(--border2)}
-.bb-section{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);padding:4px 10px 2px}
-.bb-add-child{font-size:11px;padding:3px 8px;border-radius:4px;border:1px dashed var(--border2);background:transparent;color:var(--dim);cursor:pointer;margin:0 6px;font-family:var(--code)}
-.bb-add-child:hover{color:var(--text);border-color:var(--muted)}
-/* Code output pane */
-.code-out{padding:14px;font-family:var(--code);font-size:12.5px;line-height:1.7;overflow:auto;flex:1;background:#080b10;color:var(--text);white-space:pre}
-.kw{color:#ff7b72}.str{color:#a5d6ff}.num{color:#79c0ff}.cmmt{color:#484f6a}
-.page{display:none}
-.page.active{display:contents}
+button:active{transform:scale(.97)}
+.run-btn{width:100%;margin-top:6px;justify-content:center}
+
+/* op accent colors */
+.op-find   .op-name{color:var(--amber)}
+.op-substr .op-name{color:var(--cyan)}
+.op-insert .op-name{color:var(--green)}
+.op-erase  .op-name{color:var(--red)}
+.op-replace .op-name{color:var(--purple)}
+.op-concat .op-name{color:var(--orange)}
+.op-find   .run-btn{border-color:var(--amber);color:var(--amber);background:rgba(251,189,35,.08)}
+.op-substr .run-btn{border-color:var(--cyan);color:var(--cyan);background:rgba(103,232,249,.08)}
+.op-insert .run-btn{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.08)}
+.op-erase  .run-btn{border-color:var(--red);color:var(--red);background:rgba(248,113,113,.08)}
+.op-replace .run-btn{border-color:var(--purple);color:var(--purple);background:rgba(192,132,252,.08)}
+.op-concat .run-btn{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.08)}
+
+/* ── RIGHT VIZ ── */
+.right{padding:20px 24px;overflow:auto;background:var(--bg);display:flex;flex-direction:column;gap:20px}
+
+/* String object box */
+.obj-wrap{}
+.region-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#8a9abb;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.region-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.str-object{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}
+.str-obj-header{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12px;font-family:var(--code);color:#a0b4d0}
+.str-obj-fields{display:grid;grid-template-columns:repeat(3,1fr)}
+.str-obj-field{padding:10px 14px;border-right:1px solid var(--border)}
+.str-obj-field:last-child{border-right:none}
+.sof-label{font-size:10px;color:#6a80a0;font-family:var(--code);margin-bottom:2px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.sof-name{font-size:12px;font-weight:600;font-family:var(--code);color:#a0b8d8;margin-bottom:3px}
+.sof-val{font-size:15px;font-weight:600;font-family:var(--code);transition:color .3s}
+
+/* SSO indicator */
+.sso-bar{padding:8px 14px;border-top:1px solid var(--border);font-size:12px;font-family:var(--code);display:flex;align-items:center;gap:8px}
+.sso-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Cell strip */
+.cells-wrap{}
+.cells-scroll{overflow-x:auto;padding-bottom:4px}
+.cells-strip{display:flex;gap:4px;align-items:flex-end;min-height:130px;padding:8px 4px 4px}
+
+.cell{
+  flex-shrink:0;width:54px;
+  display:flex;flex-direction:column;align-items:center;
+  border-radius:6px;border:1px solid var(--cell-default-bd);
+  background:var(--cell-default-bg);
+  transition:all .25s ease;position:relative;
+  overflow:visible;
+}
+.cell.highlight{border-color:var(--amber);background:rgba(251,189,35,.12)}
+.cell.highlight-substr{border-color:var(--cyan);background:rgba(103,232,249,.1)}
+.cell.highlight-new{border-color:var(--green);background:rgba(74,222,128,.1);animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+.cell.highlight-erase{border-color:var(--red);background:rgba(248,113,113,.1)}
+.cell.highlight-replace{border-color:var(--purple);background:rgba(192,132,252,.1)}
+.cell.null-cell{border-color:#2a3a2a;background:#0d150d}
+@keyframes popIn{0%{transform:scale(0) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
+.cell.shake{animation:shake .35s ease}
+
+.cell-ascii{font-size:10px;font-family:var(--code);color:#6a8aaa;padding:5px 0 3px;width:100%;text-align:center;border-bottom:1px solid var(--border2);font-weight:500}
+.cell-char{font-size:22px;font-weight:600;font-family:var(--code);padding:6px 0 4px;color:#e8f0ff}
+.cell-char.null-char{font-size:11px;color:#4a9a5a;padding:10px 0}
+.cell-idx{font-size:10px;font-family:var(--code);color:#5a7a9a;padding:3px 0 5px;font-weight:500}
+.cell-idx.highlighted{color:var(--amber);font-weight:700}
+
+/* C-string mode null terminator label */
+.null-label{font-size:9px;color:#3a6a3a;font-family:var(--code);text-align:center;margin-top:3px}
+
+/* Result panel */
+.result-box{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);
+  overflow:hidden;min-height:80px;
+  transition:border-color .3s;
+}
+.result-box.has-result{border-color:var(--border2)}
+.result-header{padding:8px 14px;background:var(--s2);border-bottom:1px solid var(--border);font-size:11px;font-family:var(--code);color:#8a9abb;display:flex;justify-content:space-between;align-items:center}
+.result-op-name{font-weight:600}
+.result-body{padding:14px}
+
+.result-cells-wrap{margin-bottom:10px}
+.result-msg{font-size:12px;font-family:var(--code);color:#9ab0cc;line-height:1.7}
+.result-msg .hl{font-weight:600}
+.result-msg .hl-found{color:var(--amber)}
+.result-msg .hl-blue{color:var(--blue)}
+.result-msg .hl-green{color:var(--green)}
+.result-msg .hl-red{color:var(--red)}
+.result-msg .hl-cyan{color:var(--cyan)}
+.result-msg .hl-purple{color:var(--purple)}
+.result-msg .hl-orange{color:var(--orange)}
+
+/* C-string info box */
+.cstr-info{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:6px;padding:12px 14px;font-size:12px;font-family:var(--code);line-height:1.7;color:#9ab0cc}
+.cstr-info .hl{color:var(--green);font-weight:600}
+.cstr-info .warn{color:var(--amber)}
+.cstr-danger{background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.15);border-radius:6px;padding:12px 14px;font-size:12px;font-family:var(--code);line-height:1.7;color:#9ab0cc;margin-top:10px}
+.cstr-danger .hl{color:var(--red);font-weight:600}
+
+/* Log */
+.log-strip{display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto}
+.log-entry{font-size:11px;font-family:var(--code);color:#8fa8c4;padding:5px 10px;background:var(--s2);border-radius:4px;border-left:3px solid var(--border2);animation:logIn .15s ease}
+@keyframes logIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+.log-entry.log-find{border-left-color:var(--amber)}
+.log-entry.log-substr{border-left-color:var(--cyan)}
+.log-entry.log-insert{border-left-color:var(--green)}
+.log-entry.log-erase{border-left-color:var(--red)}
+.log-entry.log-replace{border-left-color:var(--purple)}
+.log-entry.log-concat{border-left-color:var(--orange)}
+.log-entry.log-cstr{border-left-color:var(--green)}
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1>C++ Flowchart Visualizer</h1>
-    <p>if/else · loops · switch</p>
+  <div class="header-left">
+    <div>
+      <h1>C++ String Visualizer</h1>
+      <p>characters · indices · ASCII · operations</p>
+    </div>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('code')">Code → Flowchart</button>
-    <button class="tab" onclick="switchTab('builder')">Block Builder → Code</button>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-cpp" onclick="setMode('cpp')">std::string</button>
+    <button class="mode-btn" id="btn-cstr" onclick="setMode('cstr')">C-string (char[])</button>
   </div>
 </header>
 
-<!-- TAB 1: Code → Flowchart -->
-<div class="main" id="tab-code">
-  <div class="editor-side">
-    <div class="panel-head">
-      <div class="dot-row"><span class="dot" style="background:#ff5f56"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#27c93f"></span></div>
-      <span>editor</span>
-    </div>
-    <div class="preset-row">
-      <span class="plabel">Examples:</span>
-      <button class="preset" onclick="loadP('grade')">grade checker</button>
-      <button class="preset" onclick="loadP('loop')">while loop</button>
-      <button class="preset" onclick="loadP('for')">for loop</button>
-      <button class="preset" onclick="loadP('dowhile')">do-while</button>
-      <button class="preset" onclick="loadP('switch')">switch</button>
-      <button class="preset" onclick="loadP('nested')">nested</button>
-    </div>
-    <textarea id="code" spellcheck="false">int score = 85;
+<div class="layout">
 
-if (score >= 90) {
-    grade = 'A';
-} else if (score >= 80) {
-    grade = 'B';
-} else if (score >= 70) {
-    grade = 'C';
-} else {
-    grade = 'F';
-}</textarea>
-    <div class="toolbar">
-      <button class="btn-run" onclick="runFlowchart()">&#9654; Generate Flowchart</button>
-      <button onclick="clearChart()">Clear</button>
-    </div>
-    <div id="err" class="err-bar"></div>
-  </div>
-  <div class="chart-side">
-    <div class="chart-inner" id="chart-container">
-      <div class="empty-chart" id="empty-msg">// write some code<br>// and hit Generate Flowchart</div>
-      <div id="chart-svg"></div>
-    </div>
-  </div>
-</div>
-
-<!-- TAB 2: Block Builder → Code -->
-<div class="main" id="tab-builder" style="display:none">
-  <div class="builder-side" style="overflow-y:auto">
-    <div class="panel-head"><span>block builder</span></div>
-    <div class="bb-palette">
-      <span style="font-size:11px;color:var(--dim);align-self:center">Add:</span>
-      <button class="bb-btn" onclick="addBlock('stmt')">Statement</button>
-      <button class="bb-btn" onclick="addBlock('if')">If / Else</button>
-      <button class="bb-btn" onclick="addBlock('while')">While</button>
-      <button class="bb-btn" onclick="addBlock('for')">For</button>
-      <button class="bb-btn" onclick="addBlock('switch')">Switch</button>
-    </div>
-    <div class="bb-blocks" id="bb-blocks">
-      <div style="text-align:center;color:var(--dim);font-size:12px;padding:24px;font-family:var(--code)">
-        // add blocks from the palette above
+  <!-- LEFT -->
+  <div class="left">
+    <div class="phead">String Input</div>
+    <div class="str-input-wrap">
+      <div class="str-input-label">Type your string:</div>
+      <input class="str-input" id="str-input" type="text" value="Hello, World!" maxlength="40" oninput="onStrChange()"/>
+      <div class="str-meta">
+        <span>length: <b id="meta-len">13</b></span>
+        <span>capacity: <b id="meta-cap">13</b></span>
+        <span id="meta-sso-badge"></span>
       </div>
     </div>
-    <div style="padding:10px 12px;border-top:1px solid var(--border);background:var(--s2);display:flex;gap:8px">
-      <button class="btn-run" onclick="generateCode()">&#9654; Generate Code</button>
-      <button onclick="clearBuilder()">Clear All</button>
+
+    <div class="ops-section">
+      <div class="ops-title">Operations</div>
+      <div class="op-list">
+
+        <!-- find -->
+        <div class="op-item op-find" id="op-find">
+          <div class="op-header" onclick="toggleOp('op-find')">
+            <span class="op-name">find()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Returns index of first match, or string::npos if not found.</div>
+            <div class="field-row"><span class="field-label">find:</span><input type="text" id="find-q" placeholder="World" value="World"/></div>
+            <button class="run-btn" onclick="runFind()">▶ run find()</button>
+          </div>
+        </div>
+
+        <!-- substr -->
+        <div class="op-item op-substr" id="op-substr">
+          <div class="op-header" onclick="toggleOp('op-substr')">
+            <span class="op-name">substr()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Returns a new string of len chars starting at pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="substr-pos" value="7" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="substr-len" value="5" min="1"/></div>
+            <button class="run-btn" onclick="runSubstr()">▶ run substr()</button>
+          </div>
+        </div>
+
+        <!-- insert -->
+        <div class="op-item op-insert" id="op-insert">
+          <div class="op-header" onclick="toggleOp('op-insert')">
+            <span class="op-name">insert()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Inserts str before position pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="insert-pos" value="5" min="0"/></div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="insert-str" value=" there" maxlength="20"/></div>
+            <button class="run-btn" onclick="runInsert()">▶ run insert()</button>
+          </div>
+        </div>
+
+        <!-- erase -->
+        <div class="op-item op-erase" id="op-erase">
+          <div class="op-header" onclick="toggleOp('op-erase')">
+            <span class="op-name">erase()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Removes len characters starting at pos.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="erase-pos" value="5" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="erase-len" value="7" min="1"/></div>
+            <button class="run-btn" onclick="runErase()">▶ run erase()</button>
+          </div>
+        </div>
+
+        <!-- replace -->
+        <div class="op-item op-replace" id="op-replace">
+          <div class="op-header" onclick="toggleOp('op-replace')">
+            <span class="op-name">replace()</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Replaces len chars at pos with str.</div>
+            <div class="field-row"><span class="field-label">pos:</span><input type="number" id="replace-pos" value="7" min="0"/></div>
+            <div class="field-row"><span class="field-label">len:</span><input type="number" id="replace-len" value="5" min="1"/></div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="replace-str" value="C++" maxlength="20"/></div>
+            <button class="run-btn" onclick="runReplace()">▶ run replace()</button>
+          </div>
+        </div>
+
+        <!-- concat -->
+        <div class="op-item op-concat" id="op-concat">
+          <div class="op-header" onclick="toggleOp('op-concat')">
+            <span class="op-name">+= concat</span>
+            <span class="op-chevron">▼</span>
+          </div>
+          <div class="op-body">
+            <div class="op-desc">Appends str to the end of the string.</div>
+            <div class="field-row"><span class="field-label">str:</span><input type="text" id="concat-str" value=" 🎉" maxlength="20"/></div>
+            <button class="run-btn" onclick="runConcat()">▶ run +=</button>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
-  <div class="chart-side" style="display:flex;flex-direction:column">
-    <div class="panel-head"><span>generated C++</span></div>
-    <div class="code-out" id="code-out">// your code will appear here</div>
+
+  <!-- RIGHT -->
+  <div class="right" id="right-panel">
+
+    <!-- Object box -->
+    <div class="obj-wrap">
+      <div class="region-label" id="obj-region-label">Stack — std::string object (32 bytes)</div>
+      <div class="str-object" id="str-object">
+        <div class="str-obj-header">
+          <span id="obj-type-label">std::string s = "Hello, World!";</span>
+          <span style="color:#6a80a0">main() frame</span>
+        </div>
+        <div class="str-obj-fields">
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name" id="field1-name">data*</div>
+            <div class="sof-val" id="field1-val" style="color:var(--blue);font-size:12px">0x3a001000</div>
+            <div style="font-size:10px;color:#6a80a0;margin-top:2px;font-family:var(--code)" id="field1-sub">→ heap buffer</div>
+          </div>
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name">size</div>
+            <div class="sof-val" id="sf-size" style="color:var(--green)">13</div>
+            <div style="font-size:10px;color:#6a80a0;margin-top:2px;font-family:var(--code)">chars used</div>
+          </div>
+          <div class="str-obj-field">
+            <div class="sof-label">field</div>
+            <div class="sof-name">capacity</div>
+            <div class="sof-val" id="sf-cap" style="color:var(--purple)">13</div>
+            <div style="font-size:10px;color:#6a80a0;margin-top:2px;font-family:var(--code)">slots allocated</div>
+          </div>
+        </div>
+        <div class="sso-bar" id="sso-bar">
+          <span class="sso-dot" id="sso-dot"></span>
+          <span id="sso-label" style="font-size:12px;font-family:var(--code)"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cell strip -->
+    <div class="cells-wrap">
+      <div class="region-label" id="cells-region-label">Character cells — each cell = 1 byte</div>
+      <div class="cells-scroll">
+        <div class="cells-strip" id="cells-strip"></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="result-box">
+      <div class="result-header">
+        <span>Result</span>
+        <span class="result-op-name" id="result-op-name" style="color:#8a9abb">run an operation to see output</span>
+      </div>
+      <div class="result-body" id="result-body">
+        <div class="result-msg" style="color:#6a80a0">// choose an operation from the left panel and hit run</div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div>
+      <div class="region-label">Operation log <button style="font-size:10px;padding:2px 8px;margin-left:8px;border-radius:3px" onclick="clearLog()">clear</button></div>
+      <div class="log-strip" id="log-strip"></div>
+    </div>
+
   </div>
 </div>
 
 <script>
 'use strict';
 
-// ================================================================
-// LAYOUT CONSTANTS
-// ================================================================
-const RW=190,RH=46,DW=210,DH=62,OW=140,OH=40;
-const VG=32,HG=50,LB=62;
+// ── STATE ──────────────────────────────────────────────────────────
+let currentStr = 'Hello, World!';
+let mode = 'cpp'; // 'cpp' | 'cstr'
+const SSO_THRESHOLD = 15;
 
-// ================================================================
-// PRESETS
-// ================================================================
-const PRESETS = {
-  grade:`int score = 85;\n\nif (score >= 90) {\n    grade = 'A';\n} else if (score >= 80) {\n    grade = 'B';\n} else if (score >= 70) {\n    grade = 'C';\n} else {\n    grade = 'F';\n}`,
-  loop:`int count = 0;\nint sum = 0;\n\nwhile (count < 10) {\n    sum = sum + count;\n    count++;\n}\n\ncout << sum;`,
-  for:`int total = 0;\n\nfor (int i = 1; i <= 5; i++) {\n    total = total + i;\n}\n\ncout << total;`,
-  dowhile:`int attempts = 0;\nbool success = false;\n\ndo {\n    tryLogin();\n    attempts++;\n} while (!success && attempts < 3);`,
-  switch:`int day = 3;\n\nswitch (day) {\n    case 1:\n        cout << "Monday";\n        break;\n    case 2:\n        cout << "Tuesday";\n        break;\n    case 3:\n        cout << "Wednesday";\n        break;\n    default:\n        cout << "Other";\n}`,
-  nested:`int x = 5;\nint y = 10;\n\nif (x > 0) {\n    if (y > x) {\n        result = y - x;\n    } else {\n        result = x - y;\n    }\n} else {\n    while (x < 0) {\n        x++;\n    }\n    result = x;\n}`
-};
+// ── HELPERS ───────────────────────────────────────────────────────
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function loadP(k){ document.getElementById('code').value=PRESETS[k]; runFlowchart(); }
-
-// ================================================================
-// TOKENIZER
-// ================================================================
-function tokenize(src){
-  const KW=new Set(['if','else','for','while','do','switch','case','default','break','continue','return',
-    'int','float','double','char','bool','string','void','auto','true','false','cout','cin','endl']);
-  const T=[]; let i=0;
-  while(i<src.length){
-    if(/\s/.test(src[i])){i++;continue;}
-    if(src[i]==='/'&&src[i+1]==='/'){while(i<src.length&&src[i]!=='\n')i++;continue;}
-    if(src[i]==='/'&&src[i+1]==='*'){i+=2;while(i<src.length-1&&!(src[i]==='*'&&src[i+1]==='/'))i++;i+=2;continue;}
-    if(src[i]==='"'||src[i]==="'"){
-      const q=src[i];let s=q;i++;
-      while(i<src.length&&src[i]!==q){if(src[i]==='\\')s+=src[i++];s+=src[i++];}
-      T.push({t:'s',v:s+q});i++;continue;
-    }
-    if(/[0-9]/.test(src[i])){
-      let n='';while(i<src.length&&/[0-9.xXa-fA-F]/.test(src[i]))n+=src[i++];
-      T.push({t:'n',v:n});continue;
-    }
-    if(/[a-zA-Z_]/.test(src[i])){
-      let id='';while(i<src.length&&/[a-zA-Z0-9_]/.test(src[i]))id+=src[i++];
-      T.push({t:KW.has(id)?'k':'i',v:id});continue;
-    }
-    const tw=src.slice(i,i+2);
-    if(['==','!=','<=','>=','&&','||','++','--','+=','-=','*=','/=','::','<<','>>','->'].includes(tw)){
-      T.push({t:'o',v:tw});i+=2;continue;
-    }
-    T.push({t:'p',v:src[i]});i++;
-  }
-  return T;
-}
-
-// ================================================================
-// PARSER
-// ================================================================
-function parseCode(src){
-  const T=tokenize(src); let p=0;
-  const is=v=>T[p]?.v===v;
-  const eat=v=>{if(!is(v))throw new Error(`Expected "${v}" got "${T[p]?.v||'EOF'}"`);return T[p++];};
-  const eatIf=v=>{if(is(v)){p++;return true;}return false;};
-  const done=()=>p>=T.length;
-
-  function readBal(o,c){
-    eat(o);let d=1,pt=[];
-    while(!done()&&d>0){
-      const t=T[p++];
-      if(t.v===o)d++;
-      else if(t.v===c){d--;if(d>0)pt.push(t.v);continue;}
-      pt.push(t.v);
-    }
-    return pt.join(' ').replace(/\s+([,;)\]])/g,'$1').replace(/\(\s+/g,'(').replace(/\s+/g,' ').trim();
-  }
-
-  function readBlock(){
-    if(is('{')){eat('{');const s=parseBody();eatIf('}');return s;}
-    return parseOne()||[];
-  }
-
-  function parseBody(){
-    const s=[];
-    while(!done()&&!is('}')){const r=parseOne();if(r)s.push(...r);}
-    return s;
-  }
-
-  function parseOne(){
-    if(done()||is('}'))return null;
-
-    if(is('if')){
-      p++;
-      const cond=readBal('(', ')');
-      const yes=readBlock();
-      let no=null;
-      if(is('else')){p++;no=is('if')?parseOne():readBlock();}
-      return [{type:'if',cond,yes,no}];
-    }
-    if(is('while')){
-      p++;const cond=readBal('(', ')');const body=readBlock();
-      return [{type:'while',cond,body}];
-    }
-    if(is('for')){
-      p++;eat('(');
-      let init='',cond='',upd='',d=0,acc=[],part=0;
-      while(!done()){
-        const t=T[p++];
-        if(t.v==='(')d++;
-        else if(t.v===')'){if(d===0){upd=acc.join(' ').trim();break;}d--;acc.push(t.v);continue;}
-        else if(t.v===';'&&d===0){if(part===0)init=acc.join(' ').trim();else cond=acc.join(' ').trim();part++;acc=[];continue;}
-        acc.push(t.v);
-      }
-      const body=readBlock();
-      return [{type:'for',init:init.replace(/\s+/g,' ').trim(),cond:cond.replace(/\s+/g,' ').trim(),upd:upd.replace(/\s+/g,' ').trim(),body}];
-    }
-    if(is('do')){
-      p++;const body=readBlock();eatIf('while');
-      const cond=readBal('(', ')');eatIf(';');
-      return [{type:'dowhile',cond,body}];
-    }
-    if(is('switch')){
-      p++;const expr=readBal('(', ')');eat('{');
-      const cases=[];
-      while(!done()&&!is('}')){
-        if(is('case')||is('default')){
-          const isDef=is('default');p++;
-          let lbl='';if(!isDef)while(!done()&&!is(':'))lbl+=T[p++].v;
-          eatIf(':');
-          const body=[];
-          while(!done()&&!is('case')&&!is('default')&&!is('}')){
-            if(is('break')){p++;eatIf(';');break;}
-            const r=parseOne();if(r)body.push(...r);
-          }
-          cases.push({lbl:isDef?'default':lbl.trim(),body,isDef});
-        }else p++;
-      }
-      eatIf('}');
-      return [{type:'switch',expr,cases}];
-    }
-    if(is('break')||is('continue')){const v=T[p++].v;eatIf(';');return [{type:'stmt',text:v,ctrl:true}];}
-    if(is('return')){
-      p++;const pts=[];
-      while(!done()&&!is(';')&&!is('}'))pts.push(T[p++].v);
-      eatIf(';');
-      return [{type:'stmt',text:'return '+pts.join(' ').replace(/\s+/g,' ').trim(),ctrl:true}];
-    }
-    if(is('{')){ p++;const s=parseBody();eatIf('}');return s;}
-    if(is('}')||is(';')){p++;return [];}
-    // generic stmt
-    const pts=[];let d=0;
-    while(!done()){
-      const t=T[p];
-      if(t.v==='('||t.v==='[')d++;
-      else if(t.v===')'||t.v===']')d--;
-      else if((t.v==='{'||t.v==='}')&&d<=0)break;
-      else if(t.v===';'&&d<=0){p++;break;}
-      pts.push(t.v);p++;
-    }
-    const text=pts.join(' ').replace(/\s+([,;)\]])/g,'$1').replace(/\(\s+/g,'(').replace(/\s+/g,' ').trim();
-    if(text)return [{type:'stmt',text}];
-    return [];
-  }
-  return parseBody();
-}
-
-// ================================================================
-// LAYOUT ENGINE
-// ================================================================
-let SH, AR;
-
-function estimateW(stmts){
-  if(!stmts||!stmts.length)return RW;
-  let w=RW;
-  for(const s of stmts){
-    if(s.type==='if'){
-      const yw=estimateW(s.yes),nw=s.no?estimateW(s.no):0;
-      w=Math.max(w, s.no ? yw+HG+nw : Math.max(yw,DW));
-    } else if(s.type==='while'||s.type==='dowhile'){
-      w=Math.max(w,estimateW(s.body)+LB+20);
-    } else if(s.type==='for'){
-      w=Math.max(w,estimateW(s.body)+LB+20,RW);
-    } else if(s.type==='switch'){
-      const N=s.cases?.length||1;
-      w=Math.max(w,N*(RW+HG)-HG);
-    }
-  }
-  return w;
-}
-
-function renderBlock(stmts, cx, y){
-  if(!stmts||!stmts.length)return y;
-  let cy=y;
-  for(let i=0;i<stmts.length;i++){
-    const ey=renderStmt(stmts[i],cx,cy);
-    if(i<stmts.length-1){
-      AR.push({pts:[{x:cx,y:ey},{x:cx,y:ey+VG}]});
-      cy=ey+VG;
-    } else cy=ey;
-  }
-  return cy;
-}
-
-function renderStmt(stmt, cx, y){
-  if(stmt.type==='stmt'){
-    SH.push({kind:'rect',x:cx-RW/2,y,w:RW,h:RH,label:stmt.text,style:stmt.ctrl?'ctrl':'stmt'});
-    return y+RH;
-  }
-
-  if(stmt.type==='if'){
-    SH.push({kind:'diamond',x:cx-DW/2,y,w:DW,h:DH,label:stmt.cond,style:'cond'});
-    const botY=y+DH, midY=y+DH/2;
-
-    if(stmt.no){
-      const yw=Math.max(estimateW(stmt.yes),RW);
-      const nw=Math.max(estimateW(stmt.no),RW);
-      const yc=cx-(nw/2+HG/2);
-      const nc=cx+(yw/2+HG/2);
-      const bY=botY+VG;
-
-      AR.push({pts:[{x:cx-DW/2,y:midY},{x:yc,y:midY},{x:yc,y:bY}],label:'YES',lp:1});
-      AR.push({pts:[{x:cx+DW/2,y:midY},{x:nc,y:midY},{x:nc,y:bY}],label:'NO',lp:1});
-
-      const yExit=renderBlock(stmt.yes,yc,bY);
-      const nExit=renderBlock(stmt.no,nc,bY);
-      const mergeY=Math.max(yExit,nExit)+VG;
-
-      AR.push({pts:[{x:yc,y:yExit},{x:yc,y:mergeY},{x:cx,y:mergeY}]});
-      AR.push({pts:[{x:nc,y:nExit},{x:nc,y:mergeY},{x:cx,y:mergeY}]});
-      return mergeY;
-    } else {
-      const bY=botY+VG;
-      AR.push({pts:[{x:cx,y:botY},{x:cx,y:bY}],label:'YES'});
-      const yExit=renderBlock(stmt.yes,cx,bY);
-      const mergeY=yExit+VG;
-      const skX=cx+Math.max(DW/2,RW/2)+LB*0.5;
-      AR.push({pts:[{x:cx+DW/2,y:midY},{x:skX,y:midY}],label:'NO',na:true});
-      AR.push({pts:[{x:skX,y:midY},{x:skX,y:mergeY}],na:true});
-      AR.push({pts:[{x:skX,y:mergeY},{x:cx,y:mergeY}]});
-      return mergeY;
-    }
-  }
-
-  if(stmt.type==='while'){
-    SH.push({kind:'diamond',x:cx-DW/2,y,w:DW,h:DH,label:stmt.cond,style:'loop'});
-    const botY=y+DH, midY=y+DH/2;
-    AR.push({pts:[{x:cx,y:botY},{x:cx,y:botY+VG}],label:'YES'});
-    const bExit=renderBlock(stmt.body,cx,botY+VG);
-    const loopX=cx-Math.max(DW/2,RW/2)-LB;
-    AR.push({pts:[{x:cx,y:bExit},{x:loopX,y:bExit}],na:true,dash:true});
-    AR.push({pts:[{x:loopX,y:bExit},{x:loopX,y:midY}],na:true,dash:true});
-    AR.push({pts:[{x:loopX,y:midY},{x:cx-DW/2,y:midY}],dash:true});
-    const exitY=bExit+VG;
-    const noX=cx+DW/2+LB*0.45;
-    AR.push({pts:[{x:cx+DW/2,y:midY},{x:noX,y:midY}],label:'NO',na:true});
-    AR.push({pts:[{x:noX,y:midY},{x:noX,y:exitY}],na:true});
-    AR.push({pts:[{x:noX,y:exitY},{x:cx,y:exitY}]});
-    return exitY;
-  }
-
-  if(stmt.type==='for'){
-    SH.push({kind:'rect',x:cx-RW/2,y,w:RW,h:RH,label:stmt.init||'init',style:'stmt'});
-    AR.push({pts:[{x:cx,y:y+RH},{x:cx,y:y+RH+VG}]});
-    const cY=y+RH+VG;
-    SH.push({kind:'diamond',x:cx-DW/2,y:cY,w:DW,h:DH,label:stmt.cond||'true',style:'loop'});
-    const botY=cY+DH, midY=cY+DH/2;
-    AR.push({pts:[{x:cx,y:botY},{x:cx,y:botY+VG}],label:'YES'});
-    const bExit=renderBlock(stmt.body,cx,botY+VG);
-    AR.push({pts:[{x:cx,y:bExit},{x:cx,y:bExit+VG}]});
-    const uY=bExit+VG;
-    SH.push({kind:'rect',x:cx-RW/2,y:uY,w:RW,h:RH,label:stmt.upd||'update',style:'stmt'});
-    const uExit=uY+RH;
-    const loopX=cx-Math.max(DW/2,RW/2)-LB;
-    AR.push({pts:[{x:cx,y:uExit},{x:loopX,y:uExit}],na:true,dash:true});
-    AR.push({pts:[{x:loopX,y:uExit},{x:loopX,y:midY}],na:true,dash:true});
-    AR.push({pts:[{x:loopX,y:midY},{x:cx-DW/2,y:midY}],dash:true});
-    const exitY=uExit+VG;
-    const noX=cx+DW/2+LB*0.45;
-    AR.push({pts:[{x:cx+DW/2,y:midY},{x:noX,y:midY}],label:'NO',na:true});
-    AR.push({pts:[{x:noX,y:midY},{x:noX,y:exitY}],na:true});
-    AR.push({pts:[{x:noX,y:exitY},{x:cx,y:exitY}]});
-    return exitY;
-  }
-
-  if(stmt.type==='dowhile'){
-    const bExit=renderBlock(stmt.body,cx,y);
-    AR.push({pts:[{x:cx,y:bExit},{x:cx,y:bExit+VG}]});
-    const cY=bExit+VG;
-    SH.push({kind:'diamond',x:cx-DW/2,y:cY,w:DW,h:DH,label:stmt.cond,style:'loop'});
-    const botY=cY+DH, midY=cY+DH/2;
-    const loopX=cx-Math.max(DW/2,RW/2)-LB;
-    AR.push({pts:[{x:cx-DW/2,y:midY},{x:loopX,y:midY}],label:'YES',na:true,dash:true,lp:1});
-    AR.push({pts:[{x:loopX,y:midY},{x:loopX,y:y}],na:true,dash:true});
-    AR.push({pts:[{x:loopX,y:y},{x:cx,y:y}],dash:true});
-    const exitY=botY+VG;
-    AR.push({pts:[{x:cx,y:botY},{x:cx,y:exitY}],label:'NO'});
-    return exitY;
-  }
-
-  if(stmt.type==='switch'){
-    const N=stmt.cases.length||1;
-    SH.push({kind:'hex',x:cx-DW/2,y,w:DW,h:DH,label:'switch('+stmt.expr+')',style:'sw'});
-    const botY=y+DH, midY=y+DH/2;
-    const CW=Math.max(RW,160);
-    const totalW=N*(CW+HG)-HG;
-    const leftCX=cx-totalW/2+CW/2;
-    const fanY=botY+VG;
-    if(N>1){
-      AR.push({pts:[{x:cx,y:botY},{x:cx,y:midY+DH/4}],na:true});
-      AR.push({pts:[{x:leftCX,y:midY+DH/4},{x:leftCX+(N-1)*(CW+HG),y:midY+DH/4}],na:true});
-    }
-    const caseExits=[];
-    for(let i=0;i<N;i++){
-      const ccx=leftCX+i*(CW+HG);
-      AR.push({pts:[{x:ccx,y:midY+DH/4},{x:ccx,y:fanY}],label:stmt.cases[i].isDef?'default':'= '+stmt.cases[i].lbl,lp:0});
-      const ce=renderBlock(stmt.cases[i].body,ccx,fanY);
-      caseExits.push({cx:ccx,y:ce});
-    }
-    const mergeY=Math.max(...caseExits.map(c=>c.y))+VG;
-    for(const c of caseExits){
-      AR.push({pts:[{x:c.cx,y:c.y},{x:c.cx,y:mergeY},{x:cx,y:mergeY}]});
-    }
-    return mergeY;
-  }
-
-  return y;
-}
-
-function doLayout(stmts){
-  SH=[]; AR=[];
-  SH.push({kind:'oval',x:-OW/2,y:0,w:OW,h:OH,label:'START',style:'term'});
-  let y=OH+VG;
-  if(stmts.length) AR.push({pts:[{x:0,y:OH},{x:0,y:y}]});
-  const exitY=renderBlock(stmts,0,y);
-  const endY=exitY+VG;
-  AR.push({pts:[{x:0,y:exitY},{x:0,y:endY}]});
-  SH.push({kind:'oval',x:-OW/2,y:endY,w:OW,h:OH,label:'END',style:'term'});
-
-  let mnX=Infinity,mxX=-Infinity,mxY=-Infinity;
-  for(const s of SH){mnX=Math.min(mnX,s.x);mxX=Math.max(mxX,s.x+s.w);mxY=Math.max(mxY,s.y+s.h);}
-  for(const a of AR)for(const pt of a.pts){mnX=Math.min(mnX,pt.x);mxX=Math.max(mxX,pt.x);mxY=Math.max(mxY,pt.y);}
-
-  const M=70, dx=-mnX+M;
-  for(const s of SH){s.x+=dx;s.cx=s.x+s.w/2;s.cy=s.y+s.h/2;}
-  for(const a of AR)for(const pt of a.pts)pt.x+=dx;
-  return {w:mxX-mnX+M*2, h:mxY+OH+VG+40};
-}
-
-// ================================================================
-// SVG RENDERER
-// ================================================================
-const FILLS={stmt:'#12233d',ctrl:'#2a1230',cond:'#101828',loop:'#0d2416',sw:'#2a1c08',term:'#1a1e30'};
-const STROKES={stmt:'#2a4a7a',ctrl:'#6a2a5a',cond:'#3a5a9a',loop:'#2a8a5a',sw:'#8a6a2a',term:'#4a5a9a'};
-
-function escX(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-function wrapText(txt,cx,cy,mw,col,fs){
-  if(!txt)return '';
-  const cpl=Math.max(8,Math.floor(mw/(fs*0.62)));
-  const words=txt.split(' '); const lines=[];let ln='';
-  for(const w of words){if(ln&&(ln+' '+w).length>cpl){lines.push(ln);ln=w;}else ln+=(ln?' ':'')+w;}
-  if(ln)lines.push(ln);
-  const lh=fs*1.45; const sy=cy-(lines.length-1)*lh/2;
-  return lines.map((l,i)=>{
-    const disp=l.length>cpl+2?l.slice(0,cpl)+'…':l;
-    return `<text x="${cx}" y="${sy+i*lh}" text-anchor="middle" dominant-baseline="central" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${col}">${escX(disp)}</text>`;
-  }).join('\n');
-}
-
-function buildSVG(w,h){
-  let out=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <marker id="mah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#5a6a88"/></marker>
-  <marker id="myes" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4ade80"/></marker>
-  <marker id="mno" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f87171"/></marker>
-  <marker id="mcase" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#fbbd23"/></marker>
-  <marker id="mdash" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4ade80"/></marker>
-</defs>\n`;
-
-  // Arrows first
-  for(const a of AR){
-    const pts=a.pts.map(p=>`${Math.round(p.x)},${Math.round(p.y)}`).join(' ');
-    const mid=a.na?'':a.dash?'url(#mdash)':a.label==='YES'?'url(#myes)':a.label==='NO'?'url(#mno)':a.label?.startsWith('=')||a.label==='default'?'url(#mcase)':'url(#mah)';
-    const stroke=a.dash?'#2a4a32':'#2e3d58';
-    const dash=a.dash?'stroke-dasharray="6 4"':'';
-    out+=`<polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="1.5" ${dash} ${mid&&!a.na?`marker-end="${mid}"`:''}/>\n`;
-    if(a.label){
-      const lp=a.lp??1;
-      const p0=a.pts[lp]||a.pts[0], p1=a.pts[lp+1]||a.pts[lp]||a.pts[0];
-      const lx=(p0.x+p1.x)/2, ly=(p0.y+p1.y)/2;
-      const off=a.label==='YES'?-14:10;
-      const col=a.label==='YES'?'#4ade80':a.label==='NO'?'#f87171':'#fbbd23';
-      const fs=a.label.length>8?9:10;
-      out+=`<text x="${Math.round(lx+off)}" y="${Math.round(ly+1)}" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${col}" font-weight="600" dominant-baseline="central">${escX(a.label)}</text>\n`;
-    }
-  }
-
-  // Shapes
-  for(const s of SH){
-    const f=FILLS[s.style]||FILLS.stmt, st=STROKES[s.style]||STROKES.stmt;
-    const cx=s.cx,cy=s.cy,x=s.x,y=s.y,w=s.w,h=s.h;
-    if(s.kind==='rect'){
-      out+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${f}" stroke="${st}" stroke-width="1.5"/>\n`;
-      out+=wrapText(s.label,cx,cy,w-14,'#c8d8f4',11.5)+'\n';
-    }
-    else if(s.kind==='diamond'){
-      out+=`<polygon points="${cx},${y} ${x+w},${cy} ${cx},${y+h} ${x},${cy}" fill="${f}" stroke="${st}" stroke-width="1.5"/>\n`;
-      out+=wrapText(s.label,cx,cy,w*0.6,'#b8ccec',11)+'\n';
-    }
-    else if(s.kind==='oval'){
-      out+=`<ellipse cx="${cx}" cy="${cy}" rx="${w/2}" ry="${h/2}" fill="${f}" stroke="${st}" stroke-width="1.5"/>\n`;
-      out+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-family="DM Sans,sans-serif" font-size="13" fill="#9ab0d4" font-weight="600" letter-spacing="1">${escX(s.label)}</text>\n`;
-    }
-    else if(s.kind==='hex'){
-      const d=h*0.28;
-      out+=`<polygon points="${x+d},${y} ${x+w-d},${y} ${x+w},${cy} ${x+w-d},${y+h} ${x+d},${y+h} ${x},${cy}" fill="${f}" stroke="${st}" stroke-width="1.5"/>\n`;
-      out+=wrapText(s.label,cx,cy,w*0.65,'#f0c870',11)+'\n';
-    }
-  }
-  out+='</svg>';
-  return out;
-}
-
-// ================================================================
-// UI
-// ================================================================
-function runFlowchart(){
-  const src=document.getElementById('code').value.trim();
-  const errEl=document.getElementById('err');
-  errEl.classList.remove('on');
-  document.getElementById('empty-msg').style.display='none';
-
-  let ast;
-  try{ ast=parseCode(src); }
-  catch(e){ errEl.textContent='Parse error: '+e.message; errEl.classList.add('on'); return; }
-
-  if(!ast||!ast.length){
-    errEl.textContent='No statements found.'; errEl.classList.add('on'); return;
-  }
-
-  try{
-    const {w,h}=doLayout(ast);
-    document.getElementById('chart-svg').innerHTML=buildSVG(Math.max(w,300),Math.max(h,200));
-  }catch(e){ errEl.textContent='Layout error: '+e.message; errEl.classList.add('on'); }
-}
-
-function clearChart(){
-  document.getElementById('code').value='';
-  document.getElementById('chart-svg').innerHTML='';
-  document.getElementById('empty-msg').style.display='';
-  document.getElementById('err').classList.remove('on');
-}
-
-// ================================================================
-// BLOCK BUILDER
-// ================================================================
-let bbTree=[];
-let bbId=0;
-
-function makeBlock(type,parent=null){
-  const id=++bbId;
-  const b={id,type,parent,children:[]};
-  if(type==='stmt') b.text='';
-  if(type==='if'){b.cond='';b.elseChildren=[];}
-  if(type==='while'||type==='dowhile') b.cond='';
-  if(type==='for'){b.init='';b.cond='';b.upd='';}
-  if(type==='switch'){b.expr='';b.cases=[{lbl:'1',children:[]}];}
-  return b;
-}
-
-function addBlock(type,parentId=null){
-  const b=makeBlock(type);
-  if(parentId===null){bbTree.push(b);}
-  else{
-    const par=findBlock(bbTree,parentId);
-    if(par) par.children.push(b);
-  }
-  renderBuilder();
-}
-
-function findBlock(arr,id){
-  for(const b of arr){
-    if(b.id===id)return b;
-    const f=findBlock(b.children,id);if(f)return f;
-    if(b.elseChildren){const f=findBlock(b.elseChildren,id);if(f)return f;}
-    if(b.cases)for(const c of b.cases){const f=findBlock(c.children,id);if(f)return f;}
-  }
-  return null;
-}
-
-function deleteBlock(arr,id){
-  for(let i=0;i<arr.length;i++){
-    if(arr[i].id===id){arr.splice(i,1);return true;}
-    if(deleteBlock(arr[i].children,id))return true;
-    if(arr[i].elseChildren&&deleteBlock(arr[i].elseChildren,id))return true;
-    if(arr[i].cases)for(const c of arr[i].cases)if(deleteBlock(c.children,id))return true;
-  }
-  return false;
-}
-
-function getVal(id){ return (document.getElementById('bb-'+id)||{}).value||''; }
-
-function collectState(arr){
-  return arr.map(b=>{
-    const base={...b};
-    if(b.type==='stmt') base.text=getVal('stmt-'+b.id)||b.text;
-    if(b.type==='if'){base.cond=getVal('cond-'+b.id)||b.cond;base.children=collectState(b.children);base.elseChildren=collectState(b.elseChildren||[]);}
-    if(b.type==='while'||b.type==='dowhile'){base.cond=getVal('cond-'+b.id)||b.cond;base.children=collectState(b.children);}
-    if(b.type==='for'){base.init=getVal('init-'+b.id)||b.init;base.cond=getVal('cond-'+b.id)||b.cond;base.upd=getVal('upd-'+b.id)||b.upd;base.children=collectState(b.children);}
-    if(b.type==='switch'){
-      base.expr=getVal('expr-'+b.id)||b.expr;
-      base.cases=(b.cases||[]).map((c,i)=>({lbl:getVal('case-'+b.id+'-'+i)||c.lbl,children:collectState(c.children)}));
-    }
-    return base;
-  });
-}
-
-const BLOCK_STYLES={
-  stmt:{icon:'=',col:'#79c0ff',bg:'rgba(121,192,255,.1)',border:'rgba(121,192,255,.25)',label:'Statement'},
-  if:{icon:'?',col:'#4ade80',bg:'rgba(74,222,128,.1)',border:'rgba(74,222,128,.25)',label:'If / Else'},
-  while:{icon:'↻',col:'#f87171',bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.25)',label:'While'},
-  for:{icon:'#',col:'#f87171',bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.25)',label:'For'},
-  dowhile:{icon:'↺',col:'#f87171',bg:'rgba(248,113,113,.1)',border:'rgba(248,113,113,.25)',label:'Do-While'},
-  switch:{icon:'⋮',col:'#fbbd23',bg:'rgba(251,189,35,.1)',border:'rgba(251,189,35,.25)',label:'Switch'},
-};
-
-function renderBlockNode(b, depth=0){
-  const S=BLOCK_STYLES[b.type]||BLOCK_STYLES.stmt;
-  const indent=depth*14;
-  let h=`<div class="bb-block" style="margin-left:${indent}px;border-color:${S.border};background:${S.bg}">
-    <div class="bb-block-head">
-      <span class="bb-icon" style="background:${S.bg};color:${S.col};border:1px solid ${S.border}">${S.icon}</span>
-      <span class="bb-label" style="color:${S.col};font-size:13px">${S.label}</span>`;
-
-  if(b.type==='stmt'){
-    h+=`</div><div style="padding:0 10px 8px"><input class="bb-input" id="bb-stmt-${b.id}" value="${escX(b.text)}" placeholder="x = x + 1;"/></div>`;
-  } else if(b.type==='if'){
-    h+=`</div>
-      <div style="padding:4px 10px 8px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:3px">Condition</div>
-        <input class="bb-input" id="bb-cond-${b.id}" value="${escX(b.cond)}" placeholder="x > 0"/>
-      </div>`;
-    h+=`<div style="padding:0 10px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;font-weight:600">if true</div>`;
-    if(b.children.length) b.children.forEach(c=>h+=renderBlockNode(c,0));
-    h+=`<div style="padding:4px 10px"><button class="bb-add-child" style="border-color:rgba(74,222,128,.3);color:var(--dim)" onclick="addToBlock('if-yes-${b.id}')">+ add statement</button></div>`;
-    h+=`<div style="padding:4px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#f87171;font-weight:600;border-top:1px solid rgba(248,113,113,.15)">else (optional)</div>`;
-    if(b.elseChildren&&b.elseChildren.length) b.elseChildren.forEach(c=>h+=renderBlockNode(c,0));
-    h+=`<div style="padding:4px 10px 8px"><button class="bb-add-child" style="border-color:rgba(248,113,113,.3);color:var(--dim)" onclick="addToBlock('if-no-${b.id}')">+ add statement</button></div>`;
-  } else if(b.type==='while'){
-    h+=`</div>
-      <div style="padding:4px 10px 8px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:3px">Condition</div>
-        <input class="bb-input" id="bb-cond-${b.id}" value="${escX(b.cond)}" placeholder="i < 10"/>
-      </div>
-      <div style="padding:0 10px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#f87171;font-weight:600">loop body</div>`;
-    if(b.children.length) b.children.forEach(c=>h+=renderBlockNode(c,0));
-    h+=`<div style="padding:4px 10px 8px"><button class="bb-add-child" onclick="addToBlock('loop-${b.id}')">+ add statement</button></div>`;
-  } else if(b.type==='for'){
-    h+=`</div>
-      <div style="padding:4px 10px">
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px">Init</div>
-        <input class="bb-input" id="bb-init-${b.id}" value="${escX(b.init)}" placeholder="int i = 0" style="margin-bottom:6px"/>
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px">Condition</div>
-        <input class="bb-input" id="bb-cond-${b.id}" value="${escX(b.cond)}" placeholder="i < 10" style="margin-bottom:6px"/>
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px">Update</div>
-        <input class="bb-input" id="bb-upd-${b.id}" value="${escX(b.upd)}" placeholder="i++"/>
-      </div>
-      <div style="padding:0 10px 4px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#f87171;font-weight:600;border-top:1px solid rgba(248,113,113,.15)">loop body</div>`;
-    if(b.children.length) b.children.forEach(c=>h+=renderBlockNode(c,0));
-    h+=`<div style="padding:4px 10px 8px"><button class="bb-add-child" onclick="addToBlock('loop-${b.id}')">+ add statement</button></div>`;
-  } else if(b.type==='switch'){
-    h+=`</div>
-      <div style="padding:4px 10px 8px">
-        <div style="font-size:10px;color:var(--dim);margin-bottom:2px">Expression</div>
-        <input class="bb-input" id="bb-expr-${b.id}" value="${escX(b.expr)}" placeholder="day"/>
-      </div>`;
-    (b.cases||[]).forEach((c,i)=>{
-      h+=`<div style="padding:2px 10px 6px;border-top:1px solid rgba(251,189,35,.15)">
-        <div style="font-size:10px;color:#fbbd23;margin-bottom:2px">Case</div>
-        <input class="bb-input" id="bb-case-${b.id}-${i}" value="${escX(c.lbl)}" placeholder="1" style="margin-bottom:4px"/>`;
-      if(c.children.length) c.children.forEach(ch=>h+=renderBlockNode(ch,0));
-      h+=`<button class="bb-add-child" style="border-color:rgba(251,189,35,.3);color:var(--dim)" onclick="addToBlock('case-${b.id}-${i}')">+ add statement</button></div>`;
-    });
-    h+=`<div style="padding:4px 10px 8px"><button class="bb-add-child" style="border-color:rgba(251,189,35,.3);color:var(--dim)" onclick="addCase(${b.id})">+ add case</button></div>`;
-  }
-
-  h+=`<button class="bb-del" onclick="delBlock(${b.id})" title="Delete">×</button>`;
-  h+=`</div>`;
-  return h;
-}
-
-function addToBlock(spec){
-  bbTree=collectState(bbTree);
-  const parts=spec.split('-');
-  if(parts[0]==='if'&&parts[1]==='yes'){
-    const b=findBlock(bbTree,parseInt(parts[2]));
-    if(b){b.children.push(makeBlock('stmt'));renderBuilder();}
-  } else if(parts[0]==='if'&&parts[1]==='no'){
-    const b=findBlock(bbTree,parseInt(parts[2]));
-    if(b){b.elseChildren=b.elseChildren||[];b.elseChildren.push(makeBlock('stmt'));renderBuilder();}
-  } else if(parts[0]==='loop'){
-    const b=findBlock(bbTree,parseInt(parts[1]));
-    if(b){b.children.push(makeBlock('stmt'));renderBuilder();}
-  } else if(parts[0]==='case'){
-    const b=findBlock(bbTree,parseInt(parts[1]));
-    const ci=parseInt(parts[2]);
-    if(b&&b.cases[ci]){b.cases[ci].children.push(makeBlock('stmt'));renderBuilder();}
+// ── MODE SWITCH ───────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-cpp').classList.toggle('active', m==='cpp');
+  document.getElementById('btn-cstr').classList.toggle('active', m==='cstr');
+  renderAll();
+  if(m === 'cstr') {
+    showCstrResult();
+    addLog('Switched to C-string mode — null terminator \\0 now visible', 'cstr');
+  } else {
+    clearResult();
+    addLog('Switched to std::string mode', 'cstr');
   }
 }
 
-function addCase(bid){
-  bbTree=collectState(bbTree);
-  const b=findBlock(bbTree,bid);
-  if(b){b.cases=b.cases||[];b.cases.push({lbl:'',children:[]});renderBuilder();}
+// ── MAIN RENDER ───────────────────────────────────────────────────
+function renderAll(highlightConfig={}) {
+  renderObject();
+  renderCells(highlightConfig);
+  renderMeta();
 }
 
-function delBlock(id){
-  bbTree=collectState(bbTree);
-  deleteBlock(bbTree,id);
-  renderBuilder();
-}
+function renderObject() {
+  const s = currentStr;
+  const len = [...s].length;
+  const isSSO = len <= SSO_THRESHOLD;
 
-function clearBuilder(){bbTree=[];bbId=0;renderBuilder();document.getElementById('code-out').textContent='// your code will appear here';}
-
-function renderBuilder(){
-  const el=document.getElementById('bb-blocks');
-  if(!bbTree.length){
-    el.innerHTML='<div style="text-align:center;color:var(--dim);font-size:12px;padding:24px;font-family:var(--code)">// add blocks from the palette above</div>';
-    return;
+  if(mode === 'cpp') {
+    document.getElementById('obj-region-label').textContent = 'Stack — std::string object (32 bytes)';
+    document.getElementById('obj-type-label').textContent = `std::string s = "${s.length > 20 ? s.slice(0,18)+'…' : s}";`;
+    document.getElementById('field1-name').textContent = 'data*';
+    document.getElementById('field1-sub').textContent = isSSO ? '→ internal buffer (SSO)' : '→ heap buffer';
+    document.getElementById('field1-val').textContent = isSSO ? 'local buf' : '0x3a001000';
+    document.getElementById('field1-val').style.color = isSSO ? 'var(--green)' : 'var(--blue)';
+  } else {
+    document.getElementById('obj-region-label').textContent = 'Stack — char[] array (fixed size)';
+    document.getElementById('obj-type-label').textContent = `char s[${len+1}] = "${s.length > 18 ? s.slice(0,16)+'…' : s}";`;
+    document.getElementById('field1-name').textContent = 'base addr';
+    document.getElementById('field1-sub').textContent = '→ first char in array';
+    document.getElementById('field1-val').textContent = '0x7FFF1020';
+    document.getElementById('field1-val').style.color = 'var(--blue)';
   }
-  el.innerHTML=bbTree.map(b=>renderBlockNode(b)).join('');
+
+  document.getElementById('sf-size').textContent = len;
+  const cap = mode === 'cpp' ? Math.max(len, 15) : len + 1;
+  document.getElementById('sf-cap').textContent = cap;
+  document.getElementById('meta-cap').textContent = cap;
+
+  // SSO bar
+  const bar = document.getElementById('sso-bar');
+  const dot = document.getElementById('sso-dot');
+  const lbl = document.getElementById('sso-label');
+  if(mode === 'cpp') {
+    bar.style.display = 'flex';
+    dot.style.background = isSSO ? 'var(--green)' : 'var(--amber)';
+    lbl.innerHTML = isSSO
+      ? `<span style="color:var(--green)">SSO active</span> — string fits in the object itself (≤${SSO_THRESHOLD} chars). <span style="color:#6a80a0">No heap allocation!</span>`
+      : `<span style="color:var(--amber)">Heap allocated</span> — string exceeds SSO limit (${SSO_THRESHOLD} chars). <span style="color:#6a80a0">data* points to heap buffer.</span>`;
+  } else {
+    bar.style.display = 'flex';
+    dot.style.background = 'var(--red)';
+    lbl.innerHTML = `<span style="color:var(--red)">No SSO, no auto-resize</span> — fixed size array. <span style="color:#6a80a0">Buffer overflow = undefined behavior.</span>`;
+  }
 }
 
-// Code generation
-function codeFromBlock(arr, indent=''){
-  return arr.map(b=>{
-    if(b.type==='stmt') return indent+(b.text||'// statement')+';';
-    if(b.type==='if'){
-      let c=`${indent}if (${b.cond||'condition'}) {\n`;
-      c+=codeFromBlock(b.children,indent+'    ')+'\n';
-      c+=indent+'}';
-      if(b.elseChildren&&b.elseChildren.length){
-        c+=` else {\n${codeFromBlock(b.elseChildren,indent+'    ')}\n${indent}}`;
-      }
-      return c;
-    }
-    if(b.type==='while'){
-      return `${indent}while (${b.cond||'condition'}) {\n${codeFromBlock(b.children,indent+'    ')}\n${indent}}`;
-    }
-    if(b.type==='for'){
-      return `${indent}for (${b.init||'init'}; ${b.cond||'condition'}; ${b.upd||'update'}) {\n${codeFromBlock(b.children,indent+'    ')}\n${indent}}`;
-    }
-    if(b.type==='dowhile'){
-      return `${indent}do {\n${codeFromBlock(b.children,indent+'    ')}\n${indent}} while (${b.cond||'condition'});`;
-    }
-    if(b.type==='switch'){
-      let c=`${indent}switch (${b.expr||'expr'}) {\n`;
-      for(const cs of(b.cases||[])){
-        c+=`${indent}    case ${cs.lbl||'x'}:\n`;
-        c+=codeFromBlock(cs.children,indent+'        ')+'\n';
-        c+=`${indent}        break;\n`;
-      }
-      c+=`${indent}}`;
-      return c;
-    }
-    return '';
-  }).filter(Boolean).join('\n');
+function renderCells(highlightConfig={}) {
+  const strip = document.getElementById('cells-strip');
+  const chars = [...currentStr];
+  const { type, start, end, newIndices } = highlightConfig;
+
+  let html = '';
+  for(let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const code = ch.codePointAt(0);
+    const isHighlight     = type==='find'    && i>=start && i<=end;
+    const isSubstr        = type==='substr'  && i>=start && i<=end;
+    const isErase         = type==='erase'   && i>=start && i<=end;
+    const isReplace       = type==='replace' && i>=start && i<=end;
+    const isNew           = newIndices && newIndices.includes(i);
+    let cls = 'cell';
+    if(isHighlight) cls += ' highlight';
+    else if(isSubstr) cls += ' highlight-substr';
+    else if(isErase) cls += ' highlight-erase';
+    else if(isReplace) cls += ' highlight-replace';
+    if(isNew) cls += ' highlight-new';
+
+    const displayAscii = code <= 127 ? code : '…';
+    const displayChar = ch === ' ' ? '·' : esc(ch);
+    const idxCls = isHighlight ? 'cell-idx highlighted' : 'cell-idx';
+
+    html += `<div class="${cls}">
+      <div class="cell-ascii">${displayAscii}</div>
+      <div class="cell-char">${displayChar}</div>
+      <div class="${idxCls}">[${i}]</div>
+    </div>`;
+  }
+
+  // Null terminator in C-string mode
+  if(mode === 'cstr') {
+    html += `<div class="cell null-cell">
+      <div class="cell-ascii">0</div>
+      <div class="cell-char null-char">\\0</div>
+      <div class="cell-idx">[${chars.length}]</div>
+    </div>`;
+  }
+
+  strip.innerHTML = html;
+
+  // Update region label
+  const extra = mode === 'cstr' ? ` + \\0 terminator = ${chars.length+1} bytes total` : ` = ${chars.length} bytes`;
+  document.getElementById('cells-region-label').textContent = `Character cells — ${chars.length} chars${extra}`;
 }
 
-function generateCode(){
-  bbTree=collectState(bbTree);
-  const code=codeFromBlock(bbTree);
-  document.getElementById('code-out').textContent=code||'// add some blocks first';
+function renderMeta() {
+  document.getElementById('meta-len').textContent = [...currentStr].length;
+  document.getElementById('sf-size').textContent = [...currentStr].length;
 }
 
-// ================================================================
-// TAB SWITCHING
-// ================================================================
-function switchTab(name){
-  document.getElementById('tab-code').style.display=name==='code'?'grid':'none';
-  document.getElementById('tab-builder').style.display=name==='builder'?'grid':'none';
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',[0,1][i]===(name==='code'?0:1)));
+// ── OPERATIONS ────────────────────────────────────────────────────
+function runFind() {
+  const q = document.getElementById('find-q').value;
+  if(!q){ flashShake('find-q'); return; }
+  const idx = currentStr.indexOf(q);
+  if(idx === -1) {
+    showResult('find()', `
+      <div class="result-msg">
+        <span class="hl hl-red">Not found</span> — <code>"${esc(q)}"</code> is not in the string.<br>
+        Returns <span class="hl hl-red">string::npos</span> (which equals <code>size_t(-1)</code> = 18446744073709551615 on 64-bit).
+      </div>`, 'find');
+    addLog(`find("${q}") → string::npos (not found)`, 'find');
+    renderAll();
+  } else {
+    const end = idx + [...q].length - 1;
+    renderAll({ type:'find', start:idx, end });
+    showResult('find()', `
+      <div class="result-msg">
+        Found <span class="hl hl-found">"${esc(q)}"</span> starting at index <span class="hl hl-found">[${idx}]</span>, ending at [${end}].<br>
+        <span style="color:var(--dim)">s.find("${esc(q)}") → ${idx}</span><br><br>
+        <span style="color:var(--dim)">Tip: check with </span><code>if (idx != string::npos)</code><span style="color:var(--dim)"> before using the index.</span>
+      </div>`, 'find');
+    addLog(`find("${q}") → index [${idx}]`, 'find');
+  }
 }
 
-// Auto-run on load
-window.addEventListener('load',()=>runFlowchart());
+function runSubstr() {
+  const pos = clamp(parseInt(document.getElementById('substr-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('substr-len').value)||1, 1, currentStr.length-pos);
+  const result = currentStr.substr(pos, len);
+  const end = pos + len - 1;
+  renderAll({ type:'substr', start:pos, end });
+  showResult('substr()', `
+    <div class="result-msg" style="margin-bottom:10px">
+      <span class="hl hl-cyan">s.substr(${pos}, ${len})</span> → <span class="hl hl-cyan">"${esc(result)}"</span><br>
+      Starts at index [${pos}], copies ${len} character${len>1?'s':''}.
+    </div>
+    <div class="cells-scroll"><div class="cells-strip" id="result-cells" style="min-height:110px">${buildResultCells(result,'highlight-substr')}</div></div>`, 'substr');
+  addLog(`substr(${pos}, ${len}) → "${result}"`, 'substr');
+}
+
+function runInsert() {
+  const pos = clamp(parseInt(document.getElementById('insert-pos').value)||0, 0, currentStr.length);
+  const ins = document.getElementById('insert-str').value;
+  if(!ins){ flashShake('insert-str'); return; }
+  const before = currentStr;
+  currentStr = before.slice(0, pos) + ins + before.slice(pos);
+  const newIndices = Array.from({length:[...ins].length}, (_,i)=>pos+i);
+  renderAll({ newIndices });
+  showResult('insert()', `
+    <div class="result-msg">
+      Inserted <span class="hl hl-green">"${esc(ins)}"</span> at index [${pos}].<br>
+      <span style="color:var(--dim)">"${esc(before)}"</span><br>
+      → <span class="hl hl-green">"${esc(currentStr)}"</span><br><br>
+      <span style="color:var(--dim)">Note: all characters from [${pos}] onward shifted right by ${[...ins].length}.</span>
+    </div>`, 'insert');
+  addLog(`insert(${pos}, "${ins}") → "${currentStr}"`, 'insert');
+  syncInput();
+}
+
+function runErase() {
+  const pos = clamp(parseInt(document.getElementById('erase-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('erase-len').value)||1, 1, currentStr.length-pos);
+  const erased = currentStr.substr(pos, len);
+  renderAll({ type:'erase', start:pos, end:pos+len-1 });
+  setTimeout(() => {
+    const before = currentStr;
+    currentStr = currentStr.slice(0, pos) + currentStr.slice(pos+len);
+    renderAll();
+    showResult('erase()', `
+      <div class="result-msg">
+        Removed <span class="hl hl-red">"${esc(erased)}"</span> (${len} char${len>1?'s':''} at [${pos}]).<br>
+        <span style="color:var(--dim)">"${esc(before)}"</span><br>
+        → <span class="hl hl-red">"${esc(currentStr)}"</span><br><br>
+        <span style="color:var(--dim)">Characters from [${pos+len}] onward shifted left by ${len}.</span>
+      </div>`, 'erase');
+    addLog(`erase(${pos}, ${len}) → "${currentStr}"`, 'erase');
+    syncInput();
+  }, 450);
+}
+
+function runReplace() {
+  const pos = clamp(parseInt(document.getElementById('replace-pos').value)||0, 0, currentStr.length-1);
+  const len = clamp(parseInt(document.getElementById('replace-len').value)||1, 1, currentStr.length-pos);
+  const rep = document.getElementById('replace-str').value;
+  if(rep === ''){ flashShake('replace-str'); return; }
+  const before = currentStr;
+  const removed = currentStr.substr(pos, len);
+  renderAll({ type:'replace', start:pos, end:pos+len-1 });
+  setTimeout(() => {
+    currentStr = currentStr.slice(0, pos) + rep + currentStr.slice(pos+len);
+    const newIndices = Array.from({length:[...rep].length}, (_,i)=>pos+i);
+    renderAll({ newIndices });
+    showResult('replace()', `
+      <div class="result-msg">
+        Replaced <span class="hl hl-red">"${esc(removed)}"</span> (${len} chars at [${pos}]) with <span class="hl hl-purple">"${esc(rep)}"</span>.<br>
+        <span style="color:var(--dim)">"${esc(before)}"</span><br>
+        → <span class="hl hl-purple">"${esc(currentStr)}"</span>
+      </div>`, 'replace');
+    addLog(`replace(${pos}, ${len}, "${rep}") → "${currentStr}"`, 'replace');
+    syncInput();
+  }, 400);
+}
+
+function runConcat() {
+  const app = document.getElementById('concat-str').value;
+  if(!app){ flashShake('concat-str'); return; }
+  const before = currentStr;
+  const startIdx = [...currentStr].length;
+  currentStr = currentStr + app;
+  const newIndices = Array.from({length:[...app].length}, (_,i)=>startIdx+i);
+  renderAll({ newIndices });
+  showResult('+= concat', `
+    <div class="result-msg">
+      Appended <span class="hl hl-orange">"${esc(app)}"</span> to the end.<br>
+      <span style="color:var(--dim)">"${esc(before)}"</span><br>
+      → <span class="hl hl-orange">"${esc(currentStr)}"</span>
+    </div>`, 'concat');
+  addLog(`+= "${app}" → "${currentStr}"`, 'concat');
+  syncInput();
+}
+
+// ── C-STRING INFO ─────────────────────────────────────────────────
+function showCstrResult() {
+  const len = [...currentStr].length;
+  showResult('C-string mode', `
+    <div class="cstr-info">
+      <span class="hl">char s[${len+1}]</span> — array of ${len+1} bytes: ${len} characters + 1 for <span class="hl">\\0</span> (null terminator).<br><br>
+      The <span class="hl">\\0</span> at index [${len}] tells C functions like <code>strlen()</code>, <code>printf()</code>, and <code>strcpy()</code> where the string ends.
+      Without it, they just keep reading memory until they hit a zero byte somewhere — which could be anywhere.
+    </div>
+    <div class="cstr-danger">
+      <span class="hl">⚠ No bounds checking.</span> Writing more characters than the array can hold is a buffer overflow —
+      undefined behavior that can corrupt memory or crash the program.
+      This is exactly why <span class="hl">std::string</span> was invented.
+    </div>`, 'cstr');
+}
+
+// ── RESULT & LOG ──────────────────────────────────────────────────
+function showResult(opName, bodyHtml, type) {
+  const colors = {find:'var(--amber)',substr:'var(--cyan)',insert:'var(--green)',erase:'var(--red)',replace:'var(--purple)',concat:'var(--orange)',cstr:'var(--green)'};
+  document.getElementById('result-op-name').textContent = opName;
+  document.getElementById('result-op-name').style.color = colors[type] || 'var(--muted)';
+  document.getElementById('result-body').innerHTML = bodyHtml;
+}
+function clearResult() {
+  document.getElementById('result-op-name').textContent = 'run an operation to see output';
+  document.getElementById('result-op-name').style.color = 'var(--muted)';
+  document.getElementById('result-body').innerHTML = '<div class="result-msg" style="color:#6a80a0">// choose an operation from the left panel and hit run</div>';
+}
+function addLog(msg, type) {
+  const strip = document.getElementById('log-strip');
+  const el = document.createElement('div');
+  el.className = `log-entry log-${type}`;
+  el.textContent = msg;
+  strip.insertBefore(el, strip.firstChild);
+  while(strip.children.length > 12) strip.removeChild(strip.lastChild);
+}
+function clearLog() { document.getElementById('log-strip').innerHTML = ''; }
+
+function buildResultCells(str, cls) {
+  return [...str].map((ch,i) => {
+    const code = ch.codePointAt(0);
+    return `<div class="cell ${cls}"><div class="cell-ascii">${code<=127?code:'…'}</div><div class="cell-char">${ch===' '?'·':esc(ch)}</div><div class="cell-idx">[${i}]</div></div>`;
+  }).join('');
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────
+function toggleOp(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function onStrChange() {
+  currentStr = document.getElementById('str-input').value;
+  renderAll();
+  clearResult();
+  document.getElementById('meta-sso-badge').innerHTML =
+    [...currentStr].length <= SSO_THRESHOLD
+      ? `<span style="color:var(--green);font-size:10px">SSO ✓</span>`
+      : `<span style="color:var(--amber);font-size:10px">heap</span>`;
+  if(mode === 'cstr') showCstrResult();
+}
+
+function syncInput() {
+  document.getElementById('str-input').value = currentStr;
+  document.getElementById('meta-sso-badge').innerHTML =
+    [...currentStr].length <= SSO_THRESHOLD
+      ? `<span style="color:var(--green);font-size:10px">SSO ✓</span>`
+      : `<span style="color:var(--amber);font-size:10px">heap</span>`;
+}
+
+function flashShake(id) {
+  const el = document.getElementById(id);
+  el.classList.add('shake');
+  setTimeout(()=>el.classList.remove('shake'), 400);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+// Open find by default
+document.getElementById('op-find').classList.add('open');
+renderAll();
+onStrChange();
+addLog('Loaded "Hello, World!" — 13 characters', 'cstr');
 </script>
 </body>
 </html>
