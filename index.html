@@ -7,237 +7,157 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0c0f14;
-  --s1: #131720;
-  --s2: #1a2030;
-  --border: #252d40;
-  --border2: #303d55;
-  --text: #d8e4f8;
-  --muted: #7080a0;
-  --dim: #3a4a62;
-  --green: #4ade80;
-  --blue: #79c0ff;
-  --purple: #c084fc;
-  --amber: #fbbd23;
-  --red: #f87171;
-  --cyan: #67e8f9;
-  --code: 'JetBrains Mono', monospace;
-  --ui: 'DM Sans', sans-serif;
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7080a0; --dim:#3a4a62;
+  --green:#4ade80; --blue:#79c0ff; --purple:#c084fc;
+  --amber:#fbbd23; --red:#f87171; --cyan:#67e8f9;
+  --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--ui);
-  min-height: 100vh;
-  line-height: 1.6;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);min-height:100vh;line-height:1.6}
 
 /* ── HERO ── */
-.hero {
-  padding: 72px 24px 56px;
-  text-align: center;
-  position: relative;
-  border-bottom: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 60%, rgba(121,192,255,.05) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 50% at 70% 40%, rgba(192,132,252,.04) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.hero-eyebrow {
-  display: inline-block;
-  font-family: var(--code);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--green);
-  background: rgba(74,222,128,.08);
-  border: 1px solid rgba(74,222,128,.2);
-  border-radius: 20px;
-  padding: 4px 14px;
-  margin-bottom: 20px;
-  letter-spacing: .04em;
-}
-
-.hero h1 {
-  font-size: clamp(28px, 5vw, 46px);
-  font-weight: 600;
-  letter-spacing: -.03em;
-  line-height: 1.15;
-  margin-bottom: 16px;
-  color: var(--text);
-}
-
-.hero h1 span { color: var(--blue); }
-
-.hero p {
-  font-size: 16px;
-  color: var(--muted);
-  max-width: 520px;
-  margin: 0 auto 32px;
-  font-weight: 400;
-}
-
-.hero-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  font-family: var(--code);
-  font-size: 12px;
-  color: var(--dim);
-}
-.hero-meta span { display: flex; align-items: center; gap: 6px; }
-.hero-dot { width: 6px; height: 6px; border-radius: 50%; }
+.hero{padding:72px 24px 56px;text-align:center;position:relative;border-bottom:1px solid var(--border);overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 30% 60%,rgba(121,192,255,.05) 0%,transparent 70%),radial-gradient(ellipse 50% 50% at 70% 40%,rgba(192,132,252,.04) 0%,transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-block;font-family:var(--code);font-size:12px;font-weight:500;color:var(--green);background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:20px;padding:4px 14px;margin-bottom:20px;letter-spacing:.04em}
+.hero h1{font-size:clamp(28px,5vw,46px);font-weight:600;letter-spacing:-.03em;line-height:1.15;margin-bottom:16px}
+.hero h1 span{color:var(--blue)}
+.hero p{font-size:16px;color:var(--muted);max-width:520px;margin:0 auto 32px;font-weight:400}
+.hero-meta{display:flex;align-items:center;justify-content:center;gap:24px;font-family:var(--code);font-size:12px;color:var(--dim)}
+.hero-meta span{display:flex;align-items:center;gap:6px}
+.hero-dot{width:6px;height:6px;border-radius:50%}
 
 /* ── SECTION ── */
-.section {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 48px 24px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 28px;
-}
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  color: var(--muted);
-  font-family: var(--code);
-}
-.section-line { flex: 1; height: 1px; background: var(--border); }
+.section{max-width:960px;margin:0 auto;padding:48px 24px}
+.section-header{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-family:var(--code);white-space:nowrap}
+.section-line{flex:1;height:1px;background:var(--border)}
 
 /* ── CARDS ── */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:20px;color:inherit;display:flex;flex-direction:column;gap:12px;transition:border-color .15s,background .15s,transform .15s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent,var(--blue));opacity:0;transition:opacity .2s}
+.card:hover{background:var(--s2);border-color:var(--border2);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--card-icon-bg,rgba(121,192,255,.1));border:1px solid var(--card-icon-bd,rgba(121,192,255,.2));flex-shrink:0}
+.card-top{display:flex;align-items:flex-start;gap:12px}
+.card-title-wrap{flex:1}
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px;letter-spacing:-.01em}
+.card-course{font-size:11px;font-family:var(--code);color:var(--muted)}
+.card-desc{font-size:13px;color:var(--muted);line-height:1.55;flex:1}
+.card-tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-family:var(--code);font-size:10px;padding:2px 8px;border-radius:3px;background:var(--s2);border:1px solid var(--border2);color:var(--muted)}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--dim);font-family:var(--code);gap:8px}
+.card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 
-.card {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  transition: border-color .15s, background .15s, transform .15s;
-  position: relative;
-  overflow: hidden;
-}
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--card-accent, var(--blue));
-  opacity: 0;
-  transition: opacity .2s;
-}
-.card:hover { background: var(--s2); border-color: var(--border2); transform: translateY(-2px); }
-.card:hover::before { opacity: 1; }
+.btn-open{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--card-accent,var(--blue));text-decoration:none;background:none;border:none;cursor:pointer;font-family:var(--code);padding:0}
+.btn-open::after{content:'→';transition:transform .15s}
+.card:hover .btn-open::after{transform:translateX(3px)}
 
-.card-icon {
-  width: 36px; height: 36px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  background: var(--card-icon-bg, rgba(121,192,255,.1));
-  border: 1px solid var(--card-icon-bd, rgba(121,192,255,.2));
-  flex-shrink: 0;
+.btn-embed{
+  display:flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;
+  color:var(--muted);background:var(--s3);
+  border:1px solid var(--border2);border-radius:4px;
+  padding:3px 9px;cursor:pointer;font-family:var(--code);
+  transition:all .12s;
 }
+.btn-embed:hover{color:var(--text);border-color:var(--muted);background:var(--border2)}
+.embed-icon{font-size:10px;opacity:.7}
 
-.card-top { display: flex; align-items: flex-start; gap: 12px; }
-.card-title-wrap { flex: 1; }
-.card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 2px;
-  letter-spacing: -.01em;
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
 }
-.card-course {
-  font-size: 11px;
-  font-family: var(--code);
-  color: var(--muted);
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--s1);border:1px solid var(--border2);border-radius:12px;
+  width:100%;max-width:580px;overflow:hidden;
+  transform:translateY(14px) scale(.97);transition:transform .22s cubic-bezier(.34,1.2,.64,1);
 }
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
 
-.card-desc {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.55;
-  flex: 1;
-}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--s2);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-header-left{}
+.modal-tool-name{font-size:15px;font-weight:600;letter-spacing:-.01em;margin-bottom:2px}
+.modal-tool-course{font-size:11px;font-family:var(--code);color:var(--muted)}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;padding:0;flex-shrink:0;transition:color .12s}
+.modal-close:hover{color:var(--text)}
 
-.card-tags {
-  display: flex; flex-wrap: wrap; gap: 5px;
-}
-.tag {
-  font-family: var(--code);
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: var(--s2);
-  border: 1px solid var(--border2);
-  color: var(--muted);
-}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:16px}
 
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--dim);
-  font-family: var(--code);
-}
-.card-launch {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 500;
-  color: var(--card-accent, var(--blue));
-}
-.card-launch::after { content: '→'; transition: transform .15s; }
-.card:hover .card-launch::after { transform: translateX(3px); }
+.modal-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-family:var(--code);margin-bottom:6px}
 
-/* ── DIVIDER ── */
-.divider { border: none; border-top: 1px solid var(--border); }
+.code-block{
+  background:#080b10;border:1px solid var(--border2);border-radius:6px;
+  padding:14px 14px 14px 14px;
+  font-family:var(--code);font-size:12px;line-height:1.75;
+  color:#a8d4ff;position:relative;
+  white-space:pre;overflow-x:auto;
+}
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  font-size:11px;font-weight:500;padding:3px 10px;
+  border-radius:4px;border:1px solid var(--border2);
+  background:var(--s3);color:var(--muted);
+  cursor:pointer;font-family:var(--code);transition:all .12s;
+}
+.copy-btn:hover{background:var(--border2);color:var(--text)}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(74,222,128,.08)}
+
+.modal-hint{font-size:12px;color:var(--muted);line-height:1.65;padding:11px 14px;background:rgba(121,192,255,.04);border:1px solid rgba(121,192,255,.1);border-radius:6px;font-family:var(--code)}
+.modal-hint strong{color:var(--blue);font-weight:500}
+
+.modal-footer{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
+.modal-footer-label{font-size:11px;color:var(--dim);font-family:var(--code)}
+.modal-open-link{font-size:12px;font-family:var(--code);color:var(--muted);text-decoration:none;padding:5px 12px;border:1px solid var(--border2);border-radius:5px;background:var(--s2);transition:all .12s}
+.modal-open-link:hover{color:var(--text);border-color:var(--muted)}
 
 /* ── FOOTER ── */
-footer {
-  text-align: center;
-  padding: 32px 24px;
-  font-size: 12px;
-  color: var(--dim);
-  font-family: var(--code);
-  border-top: 1px solid var(--border);
-}
-footer a { color: var(--muted); text-decoration: none; }
-footer a:hover { color: var(--text); }
+footer{text-align:center;padding:32px 24px;font-size:12px;color:var(--dim);font-family:var(--code);border-top:1px solid var(--border)}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--text)}
 </style>
 </head>
 <body>
 
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-tool-name" id="modal-title"></div>
+        <div class="modal-tool-course" id="modal-course"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-label">Canvas iFrame Embed Code</div>
+        <div class="code-block"><button class="copy-btn" id="copy-btn" onclick="copyCode()">copy</button><span id="modal-code"></span></div>
+      </div>
+      <div class="modal-hint">
+        In Canvas: edit a <strong>Page</strong> → click the <strong>&lt;/&gt; HTML Editor</strong> button → paste the code above.
+        Adjust <strong>height</strong> to taste — the value shown is a good starting point for each tool.
+      </div>
+      <div class="modal-footer">
+        <span class="modal-footer-label">or open standalone →</span>
+        <a class="modal-open-link" id="modal-direct" href="#" target="_blank">open in new tab ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HERO ── -->
 <div class="hero">
   <div class="hero-eyebrow">C++ Interactive Tools</div>
   <h1>Learn C++ by <span>seeing</span> the machine.</h1>
-  <p>Interactive visualizers for C++ memory, pointers, objects, STL, and control flow. Click a demo to open it — each one runs entirely in your browser, no setup needed.</p>
+  <p>Interactive visualizers for C++ memory, pointers, objects, STL, and control flow. Each tool runs entirely in your browser — no setup needed.</p>
   <div class="hero-meta">
     <span><span class="hero-dot" style="background:var(--green)"></span>5 tools</span>
     <span><span class="hero-dot" style="background:var(--blue)"></span>C++17</span>
@@ -254,12 +174,12 @@ footer a:hover { color: var(--text); }
 
   <div class="card-grid">
 
-    <a class="card" href="demos/cpp-stack-visualizer.html" style="--card-accent:var(--blue);--card-icon-bg:rgba(121,192,255,.1);--card-icon-bd:rgba(121,192,255,.2)">
+    <div class="card" style="--card-accent:var(--blue);--card-icon-bg:rgba(121,192,255,.1);--card-icon-bd:rgba(121,192,255,.2)">
       <div class="card-top">
         <div class="card-icon">📦</div>
         <div class="card-title-wrap">
           <div class="card-title">Stack Variable Visualizer</div>
-    <span class="card-course">C++ · Memory</span>
+          <div class="card-course">C++ · Memory</div>
         </div>
       </div>
       <div class="card-desc">Declare variables and watch them get pushed onto the stack frame in real time. See RSP/RBP update, addresses assigned, and byte sizes laid out.</div>
@@ -268,15 +188,18 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="card-footer">
         <span>x86-64 · main() frame</span>
-        <span class="card-launch">Open</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-stack-visualizer','Stack Variable Visualizer','C++ · Memory',750)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-stack-visualizer.html" target="_blank">Open</a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="card" href="demos/cpp-pointer-explorer.html" style="--card-accent:var(--green);--card-icon-bg:rgba(74,222,128,.1);--card-icon-bd:rgba(74,222,128,.2)">
+    <div class="card" style="--card-accent:var(--green);--card-icon-bg:rgba(74,222,128,.1);--card-icon-bd:rgba(74,222,128,.2)">
       <div class="card-top">
         <div class="card-icon">🔗</div>
         <div class="card-title-wrap">
-          <div class="card-title">Pointer & Reference Explorer</div>
+          <div class="card-title">Pointer &amp; Reference Explorer</div>
           <div class="card-course">C++ · Pointers</div>
         </div>
       </div>
@@ -286,11 +209,14 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="card-footer">
         <span>click cells to inspect</span>
-        <span class="card-launch">Open</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-pointer-explorer','Pointer &amp; Reference Explorer','C++ · Pointers',750)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-pointer-explorer.html" target="_blank">Open</a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="card" href="demos/cpp-vector-visualizer.html" style="--card-accent:var(--purple);--card-icon-bg:rgba(192,132,252,.1);--card-icon-bd:rgba(192,132,252,.2)">
+    <div class="card" style="--card-accent:var(--purple);--card-icon-bg:rgba(192,132,252,.1);--card-icon-bd:rgba(192,132,252,.2)">
       <div class="card-top">
         <div class="card-icon">📊</div>
         <div class="card-title-wrap">
@@ -304,15 +230,18 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="card-footer">
         <span>size · capacity · data*</span>
-        <span class="card-launch">Open</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-vector-visualizer','Vector Internals Visualizer','C++ · STL · Memory',820)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-vector-visualizer.html" target="_blank">Open</a>
+        </div>
       </div>
-    </a>
+    </div>
 
-    <a class="card" href="demos/cpp-object-visualizer.html" style="--card-accent:var(--amber);--card-icon-bg:rgba(251,189,35,.1);--card-icon-bd:rgba(251,189,35,.2)">
+    <div class="card" style="--card-accent:var(--amber);--card-icon-bg:rgba(251,189,35,.1);--card-icon-bd:rgba(251,189,35,.2)">
       <div class="card-top">
         <div class="card-icon">🏛️</div>
         <div class="card-title-wrap">
-          <div class="card-title">Object & Class Visualizer</div>
+          <div class="card-title">Object &amp; Class Visualizer</div>
           <div class="card-course">C++ · OOP</div>
         </div>
       </div>
@@ -322,20 +251,23 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="card-footer">
         <span>UML · heap layout · code seg</span>
-        <span class="card-launch">Open</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-object-visualizer','Object &amp; Class Visualizer','C++ · OOP',760)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-object-visualizer.html" target="_blank">Open</a>
+        </div>
       </div>
-    </a>
+    </div>
 
   </div>
 
   <div class="section-header" style="margin-top:48px">
-    <span class="section-label">Logic & Control Flow</span>
+    <span class="section-label">Logic &amp; Control Flow</span>
     <div class="section-line"></div>
   </div>
 
   <div class="card-grid">
 
-    <a class="card" href="demos/cpp-flowchart-visualizer.html" style="--card-accent:var(--cyan);--card-icon-bg:rgba(103,232,249,.1);--card-icon-bd:rgba(103,232,249,.2)">
+    <div class="card" style="--card-accent:var(--cyan);--card-icon-bg:rgba(103,232,249,.1);--card-icon-bd:rgba(103,232,249,.2)">
       <div class="card-top">
         <div class="card-icon">🔀</div>
         <div class="card-title-wrap">
@@ -349,9 +281,12 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="card-footer">
         <span>code→chart · chart→code</span>
-        <span class="card-launch">Open</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-flowchart-visualizer','Flowchart Visualizer','C++ · Control Flow',860)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-flowchart-visualizer.html" target="_blank">Open</a>
+        </div>
       </div>
-    </a>
+    </div>
 
   </div>
 
@@ -360,8 +295,46 @@ footer a:hover { color: var(--text); }
 <footer>
   Built for classroom use · All tools run locally in the browser · No data sent anywhere
   <br style="margin-bottom:6px">
-  <a href="https://github.com/YOUR-USERNAME/cpp-interactive-tools">github.com/YOUR-USERNAME/cpp-interactive-tools</a>
+  <a href="https://github.com/dinocrates/cpp-interactive-tools">github.com/dinocrates/cpp-interactive-tools</a>
 </footer>
 
+<script>
+const BASE = 'https://dinocrates.github.io/cpp-interactive-tools/demos/';
+
+function showEmbed(file, title, course, height) {
+  const url = BASE + file + '.html';
+  const code = `<iframe\n  src="${url}"\n  width="100%"\n  height="${height}"\n  frameborder="0"\n  allowfullscreen>\n</iframe>`;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-course').textContent = course;
+  document.getElementById('modal-code').textContent = code;
+  document.getElementById('modal-direct').href = url;
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'copy';
+  btn.classList.remove('copied');
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function copyCode() {
+  const code = document.getElementById('modal-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2200);
+  });
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
 </body>
 </html>
