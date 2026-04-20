@@ -11,7 +11,7 @@
   --border:#252d40; --border2:#303d55;
   --text:#d8e4f8; --muted:#7080a0; --dim:#3a4a62;
   --green:#4ade80; --blue:#79c0ff; --purple:#c084fc;
-  --amber:#fbbd23; --red:#f87171; --cyan:#67e8f9;
+  --amber:#fbbd23; --red:#f87171; --cyan:#67e8f9; --orange:#fb923c;
   --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -159,7 +159,7 @@ footer a:hover{color:var(--text)}
   <h1>Learn C++ by <span>seeing</span> the machine.</h1>
   <p>Interactive visualizers for C++ memory, pointers, objects, STL, and control flow. Each tool runs entirely in your browser — no setup needed.</p>
   <div class="hero-meta">
-    <span><span class="hero-dot" style="background:var(--green)"></span>5 tools</span>
+    <span><span class="hero-dot" style="background:var(--green)"></span>6 tools</span>
     <span><span class="hero-dot" style="background:var(--blue)"></span>C++17</span>
     <span><span class="hero-dot" style="background:var(--purple)"></span>No install required</span>
   </div>
@@ -254,6 +254,27 @@ footer a:hover{color:var(--text)}
         <div class="card-actions">
           <button class="btn-embed" onclick="showEmbed('cpp-object-visualizer','Object &amp; Class Visualizer','C++ · OOP',760)">&lt;/&gt; embed</button>
           <a class="btn-open" href="demos/cpp-object-visualizer.html" target="_blank">Open</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="--card-accent:var(--orange);--card-icon-bg:rgba(251,146,60,.1);--card-icon-bd:rgba(251,146,60,.2)">
+      <div class="card-top">
+        <div class="card-icon">🔤</div>
+        <div class="card-title-wrap">
+          <div class="card-title">String Visualizer</div>
+          <div class="card-course">C++ · Strings · STL</div>
+        </div>
+      </div>
+      <div class="card-desc">See every character as an individual cell with its index and ASCII value. Run find, substr, insert, erase, replace, and concat with live animation. Toggle to C-string mode to reveal the hidden \0 terminator.</div>
+      <div class="card-tags">
+        <span class="tag">find</span><span class="tag">substr</span><span class="tag">insert</span><span class="tag">erase</span><span class="tag">ASCII</span><span class="tag">SSO</span><span class="tag">\\0</span>
+      </div>
+      <div class="card-footer">
+        <span>std::string · C-string · SSO</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-string-visualizer','String Visualizer','C++ · Strings · STL',760)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-string-visualizer.html" target="_blank">Open</a>
         </div>
       </div>
     </div>
