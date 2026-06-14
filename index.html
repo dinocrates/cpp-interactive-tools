@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>C++ Interactive Tools</title>
+<script src="assets/theme.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -123,6 +124,7 @@ footer{text-align:center;padding:32px 24px;font-size:12px;color:var(--dim);font-
 footer a{color:var(--muted);text-decoration:none}
 footer a:hover{color:var(--text)}
 </style>
+<link rel="stylesheet" href="assets/theme.css">
 </head>
 <body>
 
@@ -159,7 +161,7 @@ footer a:hover{color:var(--text)}
   <h1>Learn C++ by <span>seeing</span> the machine.</h1>
   <p>Interactive visualizers for C++ memory, pointers, objects, STL, and control flow. Each tool runs entirely in your browser — no setup needed.</p>
   <div class="hero-meta">
-    <span><span class="hero-dot" style="background:var(--green)"></span>7 tools</span>
+    <span><span class="hero-dot" style="background:var(--green)"></span>9 tools</span>
     <span><span class="hero-dot" style="background:var(--blue)"></span>C++17</span>
     <span><span class="hero-dot" style="background:var(--purple)"></span>No install required</span>
   </div>
@@ -254,6 +256,48 @@ footer a:hover{color:var(--text)}
         <div class="card-actions">
           <button class="btn-embed" onclick="showEmbed('cpp-object-visualizer','Object &amp; Class Visualizer','C++ · OOP',760)">&lt;/&gt; embed</button>
           <a class="btn-open" href="demos/cpp-object-visualizer.html" target="_blank">Open</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="--card-accent:var(--cyan);--card-icon-bg:rgba(103,232,249,.1);--card-icon-bd:rgba(103,232,249,.2)">
+      <div class="card-top">
+        <div class="card-icon">op</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Operator Overload Explorer</div>
+          <div class="card-course">C++ &middot; OOP &middot; Operators</div>
+        </div>
+      </div>
+      <div class="card-desc">See how overloaded operators become function calls. Compare member and non-member overloads, stream insertion/extraction, friend access vs getters, and prefix vs postfix ++.</div>
+      <div class="card-tags">
+        <span class="tag">operator+</span><span class="tag">operator==</span><span class="tag">friend</span><span class="tag">ostream</span><span class="tag">istream</span><span class="tag">prefix++</span><span class="tag">postfix++</span>
+      </div>
+      <div class="card-footer">
+        <span>syntax sugar &middot; this* &middot; friend</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-operator-overload-visualizer','Operator Overload Explorer','C++ &middot; OOP &middot; Operators',860)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-operator-overload-visualizer.html" target="_blank">Open</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="--card-accent:var(--green);--card-icon-bg:rgba(74,222,128,.1);--card-icon-bd:rgba(74,222,128,.2)">
+      <div class="card-top">
+        <div class="card-icon">key</div>
+        <div class="card-title-wrap">
+          <div class="card-title">Who Has the Key? Friend Access</div>
+          <div class="card-course">C++ &middot; OOP &middot; Access Control</div>
+        </div>
+      </div>
+      <div class="card-desc">See how friend functions get controlled access to private data. Compare normal outside functions, member functions, public getters, stream operators, and friend declarations.</div>
+      <div class="card-tags">
+        <span class="tag">friend</span><span class="tag">private</span><span class="tag">public</span><span class="tag">ostream</span><span class="tag">istream</span><span class="tag">encapsulation</span>
+      </div>
+      <div class="card-footer">
+        <span>access control &middot; private wall &middot; friend key</span>
+        <div class="card-actions">
+          <button class="btn-embed" onclick="showEmbed('cpp-friend-function-visualizer','Who Has the Key? Friend Access','C++ &middot; OOP &middot; Access Control',860)">&lt;/&gt; embed</button>
+          <a class="btn-open" href="demos/cpp-friend-function-visualizer.html" target="_blank">Open</a>
         </div>
       </div>
     </div>

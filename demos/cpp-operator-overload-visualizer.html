@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Operator Overload Explorer</title>
+<script src="../assets/theme.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f14; --s1:#131720; --s2:#1a2030; --s3:#212840;
+  --border:#252d40; --border2:#303d55;
+  --text:#d8e4f8; --muted:#7888a8; --dim:#3a4a62;
+  --blue:#79c0ff; --green:#4ade80; --amber:#fbbd23;
+  --red:#f87171; --purple:#c084fc; --cyan:#67e8f9; --orange:#fb923c;
+  --code:'JetBrains Mono',monospace; --ui:'DM Sans',sans-serif; --r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+header{padding:12px 22px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.title h1{font-size:16px;font-weight:600;letter-spacing:-.02em}.title p{font-family:var(--code);font-size:12px;color:var(--muted)}
+.mode-strip{padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg);display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mode-card{border:1px solid var(--border2);background:var(--s1);border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:74px;position:relative;overflow:hidden}
+.mode-card::before{content:'';position:absolute;inset:0 0 auto;height:2px;background:var(--accent,var(--blue));opacity:0;transition:opacity .15s}
+.mode-card:hover{background:var(--s2);border-color:var(--muted)}
+.mode-card.active{background:var(--s2);border-color:var(--accent,var(--blue))}
+.mode-card.active::before{opacity:1}
+.mode-kicker{font-family:var(--code);font-size:10px;color:var(--accent,var(--blue));font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.mode-name{font-size:13px;color:var(--text);font-weight:600}
+.mode-desc{font-family:var(--code);font-size:10px;line-height:1.35;color:var(--muted)}
+button{font-family:var(--ui);font-size:12px;font-weight:500;padding:6px 12px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);background:var(--s3);color:var(--text);transition:all .12s}
+button:hover{background:var(--border2)}button:active{transform:scale(.98)}
+.main{flex:1;display:grid;grid-template-columns:290px minmax(360px,1fr) 330px;gap:10px;min-height:0;padding:10px;background:var(--bg)}
+.panel{min-height:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--s1)}.left{overflow:auto}.center{background:var(--bg);overflow:auto}.right{overflow:auto}
+.window-bar{height:34px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px;flex-shrink:0}
+.traffic{display:flex;gap:6px;align-items:center}.dot{width:10px;height:10px;border-radius:50%;display:block}.dot.red{background:#ff5f56}.dot.yellow{background:#ffbd2e}.dot.green{background:#27c93f}
+.window-title{font-family:var(--code);font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.center-content{padding:20px}
+.section{padding:13px 14px;border-bottom:1px solid var(--border)}.section-title{font-family:var(--code);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.preset-grid{display:flex;flex-wrap:wrap;gap:6px}.preset{font-family:var(--code);font-size:11px;padding:5px 8px;background:transparent;color:var(--muted)}.preset:hover{color:var(--text);border-color:var(--muted)}
+.field{display:flex;align-items:center;gap:8px;margin-bottom:8px}.field:last-child{margin-bottom:0}.field label{font-family:var(--code);font-size:11px;color:var(--muted);min-width:54px}
+input,select{font-family:var(--code);font-size:12px;background:#080b10;border:1px solid var(--border2);border-radius:4px;padding:6px 8px;color:var(--text);outline:none;min-width:0;width:100%}
+input:focus,select:focus{border-color:var(--blue)}select option{background:#131720}
+.seg{display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;background:var(--s2)}.seg button{flex:1;border:0;border-radius:0;background:transparent;color:var(--muted);font-family:var(--code);font-size:11px;padding:7px 8px}.seg button.active{background:var(--s3);color:var(--text)}
+.warning{display:none;padding:9px 12px;border-radius:6px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);font-family:var(--code);font-size:12px;line-height:1.5;margin-top:8px}.warning.show{display:block}
+.region-label{font-family:var(--code);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}.region-label::after{content:'';height:1px;background:var(--border);flex:1}
+.code-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}.code-box{position:relative;background:#080b10;border:1px solid var(--border2);border-radius:7px;padding:13px 14px;font-family:var(--code);font-size:12px;line-height:1.7;color:#a8d4ff;white-space:pre;overflow:auto;min-height:116px;max-width:100%}.code-box .label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kw{color:#ff7b72}.tp{color:#79c0ff}.fn{color:#d2a8ff}.nm{color:#e6edf3}.cm{color:#4d5f78}.op{color:#fbbd23}.ret{color:#4ade80}
+.viz-stage{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:18px;overflow:hidden}
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center}.arrow{font-family:var(--code);font-size:22px;color:var(--dim);text-align:center}.obj-card{background:var(--s2);border:1px solid var(--border2);border-radius:7px;overflow:hidden;min-width:0;animation:rise .22s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}.obj-head{padding:8px 10px;background:var(--s3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;align-items:center}.obj-name{font-family:var(--code);font-weight:600;font-size:13px;color:var(--blue)}.badge{font-family:var(--code);font-size:10px;color:var(--muted);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;background:var(--s1)}
+.fraction{display:flex;align-items:center;justify-content:center;gap:10px;min-height:82px;padding:12px}.frac{display:inline-grid;grid-template-rows:auto 1px auto;align-items:center;justify-items:center;font-family:var(--code);font-size:22px;font-weight:600;min-width:48px}.frac .bar{height:1px;width:100%;background:var(--muted)}.value-label{font-family:var(--code);font-size:11px;color:var(--muted);text-align:center;padding:0 10px 10px}.bool-val{font-family:var(--code);font-size:30px;font-weight:600;color:var(--green);padding:26px 10px;text-align:center}
+.mapping{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.map-card{border:1px solid var(--border);background:var(--s2);border-radius:6px;padding:10px}.map-label{font-family:var(--code);font-size:10px;color:var(--dim);margin-bottom:5px}.map-val{font-family:var(--code);font-size:12px;color:var(--text)}.map-card.this{border-color:rgba(121,192,255,.45)}.map-card.return{border-color:rgba(74,222,128,.45)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}.compare-card{background:var(--s1);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}.compare-head{padding:10px 12px;background:var(--s2);border-bottom:1px solid var(--border);font-family:var(--code);font-size:12px;font-weight:600}.compare-body{padding:12px;display:flex;flex-direction:column;gap:10px}.call-pill{font-family:var(--code);font-size:12px;color:var(--text);padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:#080b10}.param-row{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center}.param-name{font-family:var(--code);font-size:11px;color:var(--muted)}.param-box{font-family:var(--code);font-size:12px;color:var(--text);border:1px solid var(--border2);background:var(--s2);border-radius:5px;padding:7px 9px}
+.note{padding:11px 13px;border-radius:7px;background:rgba(121,192,255,.05);border:1px solid rgba(121,192,255,.16);font-family:var(--code);font-size:12px;line-height:1.65;color:var(--muted)}.note strong{color:var(--blue);font-weight:600}.note.good{background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.2)}.note.good strong{color:var(--green)}.note.warn{background:rgba(251,189,35,.06);border-color:rgba(251,189,35,.24)}.note.warn strong{color:var(--amber)}
+.chain{display:flex;flex-direction:column;gap:8px}.chain-step{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);background:var(--s2);border-radius:6px;font-family:var(--code);font-size:12px}.step-num{width:22px;height:22px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex-shrink:0}
+.counter-stage{display:grid;grid-template-columns:1fr 1fr;gap:12px}.counter-card{border:1px solid var(--border2);background:var(--s2);border-radius:7px;padding:13px}.counter-val{font-family:var(--code);font-size:34px;font-weight:600;color:var(--amber);text-align:center}.counter-title{font-family:var(--code);font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px}
+.side-body{padding:14px;display:flex;flex-direction:column;gap:12px}.side-title{font-family:var(--code);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.return-card{border:1px solid rgba(74,222,128,.32);background:rgba(74,222,128,.06);border-radius:7px;padding:12px;font-family:var(--code);font-size:12px;line-height:1.6;color:var(--muted)}.return-card strong{color:var(--green)}
+@media (max-width:980px){.mode-strip{grid-template-columns:1fr 1fr}.main{grid-template-columns:1fr}.code-grid,.compare,.counter-stage{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}}
+@media (max-width:620px){.mode-strip{grid-template-columns:1fr}.mode-card{min-height:auto}}
+</style>
+<link rel="stylesheet" href="../assets/theme.css">
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>C++ Operator Overload Explorer</h1>
+    <p>See how operators become function calls</p>
+  </div>
+</header>
+
+<nav class="mode-strip" aria-label="Learning modes">
+  <button class="mode-card active" data-tab="binary" style="--accent:var(--blue)" onclick="setTab('binary')">
+    <span class="mode-kicker">Mode 1</span>
+    <span class="mode-name">Binary Operators</span>
+    <span class="mode-desc">Turn a + b into a function call.</span>
+  </button>
+  <button class="mode-card" data-tab="member" style="--accent:var(--purple)" onclick="setTab('member')">
+    <span class="mode-kicker">Mode 2</span>
+    <span class="mode-name">Member vs Non-Member</span>
+    <span class="mode-desc">Compare hidden this with explicit parameters.</span>
+  </button>
+  <button class="mode-card" data-tab="stream" style="--accent:var(--green)" onclick="setTab('stream')">
+    <span class="mode-kicker">Mode 3</span>
+    <span class="mode-name">Stream Operators</span>
+    <span class="mode-desc">See why cout and cin use non-members.</span>
+  </button>
+  <button class="mode-card" data-tab="inc" style="--accent:var(--amber)" onclick="setTab('inc')">
+    <span class="mode-kicker">Mode 4</span>
+    <span class="mode-name">Prefix vs Postfix ++</span>
+    <span class="mode-desc">Watch updated vs old-copy returns.</span>
+  </button>
+</nav>
+
+<div class="main">
+  <aside class="panel left">
+    <div class="window-bar">
+      <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+      <span class="window-title">controls</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Presets</div>
+      <div class="preset-grid">
+        <button class="preset" onclick="preset('plus')">Fraction +</button>
+        <button class="preset" onclick="preset('eq')">Fraction ==</button>
+        <button class="preset" onclick="preset('cout')">cout &lt;&lt; Fraction</button>
+        <button class="preset" onclick="preset('cin')">cin &gt;&gt; Fraction</button>
+        <button class="preset" onclick="preset('prefix')">++Counter</button>
+        <button class="preset" onclick="preset('postfix')">Counter++</button>
+        <button class="preset" onclick="preset('member')">member vs non-member</button>
+        <button class="preset" onclick="preset('getters')">friend vs getters</button>
+      </div>
+    </div>
+
+    <div class="section" id="binary-controls">
+      <div class="section-title">Fractions</div>
+      <div class="field"><label>a num</label><input id="a-num" type="number" value="1" oninput="syncFraction()"></div>
+      <div class="field"><label>a den</label><input id="a-den" type="number" value="2" oninput="syncFraction()"></div>
+      <div class="field"><label>b num</label><input id="b-num" type="number" value="1" oninput="syncFraction()"></div>
+      <div class="field"><label>b den</label><input id="b-den" type="number" value="3" oninput="syncFraction()"></div>
+      <div class="field"><label>operator</label><select id="op-select" onchange="setOperator(this.value)">
+        <option value="+">+</option><option value="-">-</option><option value="==">==</option><option value="<">&lt;</option>
+      </select></div>
+      <div class="warning" id="frac-warning">Denominators cannot be zero. Fix the input to visualize the operator call.</div>
+    </div>
+
+    <div class="section" id="stream-controls" style="display:none">
+      <div class="section-title">Stream focus</div>
+      <div class="seg">
+        <button id="stream-out" class="active" onclick="setStreamKind('out')">cout &lt;&lt; a</button>
+        <button id="stream-in" onclick="setStreamKind('in')">cin &gt;&gt; a</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="section-title">Access style</div>
+      <div class="seg">
+        <button id="access-friend" class="active" onclick="setAccess('friend')">friend access</button>
+        <button id="access-getters" onclick="setAccess('getters')">public API</button>
+      </div>
+    </div>
+
+    <div class="section" id="inc-controls" style="display:none">
+      <div class="section-title">Counter</div>
+      <div class="field"><label>x value</label><input id="counter-val" type="number" value="5" oninput="syncCounter()"></div>
+      <div class="seg">
+        <button id="inc-prefix" class="active" onclick="setIncKind('prefix')">++x</button>
+        <button id="inc-postfix" onclick="setIncKind('postfix')">x++</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="panel center">
+    <div class="window-bar">
+      <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+      <span class="window-title" id="center-title">operator explorer</span>
+    </div>
+    <div class="center-content" id="center-output"></div>
+  </main>
+
+  <aside class="panel right">
+    <div class="window-bar">
+      <div class="traffic"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+      <span class="window-title">teaching notes</span>
+    </div>
+    <div class="side-body" id="right-output"></div>
+  </aside>
+</div>
+
+<script>
+'use strict';
+
+const state = {
+  tab: 'binary',
+  a: { num: 1, den: 2 },
+  b: { num: 1, den: 3 },
+  operator: '+',
+  streamKind: 'out',
+  access: 'friend',
+  incKind: 'prefix',
+  counter: 5
+};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=b; b=a%b; a=t; } return a || 1; }
+function simplify(num, den){
+  if(den === 0) return null;
+  if(den < 0){ num = -num; den = -den; }
+  const g = gcd(num, den);
+  return { num: num / g, den: den / g };
+}
+function fracText(f){ return `${f.num}/${f.den}`; }
+function fracHtml(f){ return `<span class="frac"><span>${esc(f.num)}</span><span class="bar"></span><span>${esc(f.den)}</span></span>`; }
+function code(s){ return esc(s).replace(/\b(class|public|private|const|return|bool|int|friend|void)\b/g,'<span class="kw">$1</span>').replace(/\b(Fraction|Counter|std::ostream|std::istream)\b/g,'<span class="tp">$1</span>').replace(/\b(operator\+\+|operator\+|operator==|operator<|operator<<|operator>>)\b/g,'<span class="fn">$1</span>'); }
+function getNums(){
+  return {
+    a: { num: parseInt(document.getElementById('a-num').value, 10) || 0, den: parseInt(document.getElementById('a-den').value, 10) || 0 },
+    b: { num: parseInt(document.getElementById('b-num').value, 10) || 0, den: parseInt(document.getElementById('b-den').value, 10) || 0 }
+  };
+}
+function compute(){
+  const { a, b } = state;
+  if(a.den === 0 || b.den === 0) return { invalid: true };
+  if(state.operator === '+') return { type:'Fraction', raw:{ num:a.num*b.den + b.num*a.den, den:a.den*b.den } };
+  if(state.operator === '-') return { type:'Fraction', raw:{ num:a.num*b.den - b.num*a.den, den:a.den*b.den } };
+  if(state.operator === '==') return { type:'bool', value:a.num*b.den === b.num*a.den };
+  return { type:'bool', value:a.num*b.den < b.num*a.den };
+}
+function fractionMemberCode(){
+  const opName = state.operator === '+' ? 'operator+' : state.operator === '-' ? 'operator-' : state.operator === '==' ? 'operator==' : 'operator<';
+  const returnType = state.operator === '+' || state.operator === '-' ? 'Fraction' : 'bool';
+  const body = {
+    '+': '        return Fraction(numerator * rhs.denominator + rhs.numerator * denominator,\n                        denominator * rhs.denominator);',
+    '-': '        return Fraction(numerator * rhs.denominator - rhs.numerator * denominator,\n                        denominator * rhs.denominator);',
+    '==': '        return numerator * rhs.denominator == rhs.numerator * denominator;',
+    '<': '        return numerator * rhs.denominator < rhs.numerator * denominator;'
+  }[state.operator];
+
+  return `class Fraction {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    Fraction(int n, int d) : numerator(n), denominator(d) {}
+
+    ${returnType} ${opName}(const Fraction& rhs) const {
+${body}
+    }
+};`;
+}
+function streamClassCode(){
+  const isOut = state.streamKind === 'out';
+  const useFriend = state.access === 'friend';
+
+  if(useFriend && isOut) return `class Fraction {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    Fraction(int n, int d);
+
+    friend std::ostream& operator<<(std::ostream& out,
+                                    const Fraction& f);
+};`;
+
+  if(useFriend) return `class Fraction {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    Fraction(int n, int d);
+
+    friend std::istream& operator>>(std::istream& in,
+                                    Fraction& f);
+};`;
+
+  if(isOut) return `class Fraction {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    int getNumerator() const;
+    int getDenominator() const;
+};`;
+
+  return `class Fraction {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    void setNumerator(int n);
+    void setDenominator(int d);
+};`;
+}
+function streamImplCode(){
+  const isOut = state.streamKind === 'out';
+  const useFriend = state.access === 'friend';
+
+  if(useFriend && isOut) return `std::ostream& operator<<(std::ostream& out, const Fraction& f) {
+    out << f.numerator << "/" << f.denominator;
+    return out;
+}`;
+
+  if(useFriend) return `std::istream& operator>>(std::istream& in, Fraction& f) {
+    in >> f.numerator;
+    in.ignore(1);
+    in >> f.denominator;
+    return in;
+}`;
+
+  if(isOut) return `std::ostream& operator<<(std::ostream& out, const Fraction& f) {
+    out << f.getNumerator() << "/" << f.getDenominator();
+    return out;
+}`;
+
+  return `std::istream& operator>>(std::istream& in, Fraction& f) {
+    int n;
+    int d;
+    in >> n;
+    in.ignore(1);
+    in >> d;
+    f.setNumerator(n);
+    f.setDenominator(d);
+    return in;
+}`;
+}
+function counterClassCode(){
+  if(state.incKind === 'prefix') return `class Counter {
+private:
+    int value;
+
+public:
+    Counter(int start) : value(start) {}
+
+    Counter& operator++() {
+        value++;
+        return *this;
+    }
+};`;
+
+  return `class Counter {
+private:
+    int value;
+
+public:
+    Counter(int start) : value(start) {}
+
+    Counter operator++(int) {
+        Counter old = *this;
+        value++;
+        return old;
+    }
+};`;
+}
+function setTab(tab){
+  state.tab = tab;
+  document.querySelectorAll('.mode-card').forEach(b=>b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('binary-controls').style.display = tab === 'binary' || tab === 'member' ? 'block' : 'none';
+  document.getElementById('stream-controls').style.display = tab === 'stream' ? 'block' : 'none';
+  document.getElementById('inc-controls').style.display = tab === 'inc' ? 'block' : 'none';
+  const titles = {
+    binary: 'mode 1 / binary operators',
+    member: 'mode 2 / member vs non-member',
+    stream: 'mode 3 / stream operators',
+    inc: 'mode 4 / prefix vs postfix ++'
+  };
+  document.getElementById('center-title').textContent = titles[tab] || 'operator explorer';
+  render();
+}
+function syncFraction(){ const n = getNums(); state.a = n.a; state.b = n.b; render(); }
+function syncCounter(){ state.counter = parseInt(document.getElementById('counter-val').value, 10) || 0; render(); }
+function setOperator(op){ state.operator = op; render(); }
+function setStreamKind(kind){ state.streamKind = kind; document.getElementById('stream-out').classList.toggle('active', kind==='out'); document.getElementById('stream-in').classList.toggle('active', kind==='in'); render(); }
+function setAccess(access){ state.access = access; document.getElementById('access-friend').classList.toggle('active', access==='friend'); document.getElementById('access-getters').classList.toggle('active', access==='getters'); render(); }
+function setIncKind(kind){ state.incKind = kind; document.getElementById('inc-prefix').classList.toggle('active', kind==='prefix'); document.getElementById('inc-postfix').classList.toggle('active', kind==='postfix'); render(); }
+function preset(name){
+  if(name === 'plus'){ setTab('binary'); state.operator='+'; }
+  if(name === 'eq'){ setTab('binary'); state.operator='=='; }
+  if(name === 'cout'){ setTab('stream'); state.streamKind='out'; }
+  if(name === 'cin'){ setTab('stream'); state.streamKind='in'; }
+  if(name === 'prefix'){ setTab('inc'); state.incKind='prefix'; }
+  if(name === 'postfix'){ setTab('inc'); state.incKind='postfix'; }
+  if(name === 'member'){ setTab('member'); }
+  if(name === 'getters'){ setTab('stream'); state.access='getters'; }
+  document.getElementById('op-select').value = state.operator;
+  setStreamKind(state.streamKind);
+  setAccess(state.access);
+  setIncKind(state.incKind);
+  render();
+}
+function objectCard(name, role, body, label='Fraction'){
+  return `<div class="obj-card"><div class="obj-head"><span class="obj-name">${esc(name)}</span><span class="badge">${esc(role)}</span></div><div class="fraction">${body}</div><div class="value-label">${esc(label)}</div></div>`;
+}
+function renderBinary(){
+  const result = compute();
+  document.getElementById('frac-warning').classList.toggle('show', !!result.invalid);
+  const opName = state.operator === '+' ? 'operator+' : state.operator === '-' ? 'operator-' : state.operator === '==' ? 'operator==' : 'operator<';
+  const returnsBool = state.operator === '==' || state.operator === '<';
+  const statement = returnsBool ? `bool result = a ${state.operator} b;` : `Fraction c = a ${state.operator} b;`;
+  const call = returnsBool ? `bool result = a.${opName}(b);` : `Fraction c = a.${opName}(b);`;
+  let resCard = objectCard('result','return value','<div class="bool-val">?</div>','bool');
+  let math = '// fix zero denominator to calculate';
+  if(!result.invalid && returnsBool){
+    resCard = objectCard('result','return value',`<div class="bool-val">${result.value}</div>`,'bool');
+    math = `${fracText(state.a)} ${state.operator} ${fracText(state.b)} -> ${result.value}`;
+  } else if(!result.invalid) {
+    const simp = simplify(result.raw.num, result.raw.den);
+    resCard = objectCard('c','receives result',fracHtml(simp),`Fraction result${fracText(result.raw) === fracText(simp) ? '' : `, simplified from ${fracText(result.raw)}`}`);
+    math = `${fracText(state.a)} ${state.operator} ${fracText(state.b)} = ${fracText(result.raw)}${fracText(result.raw) === fracText(simp) ? '' : ` = ${fracText(simp)}`}`;
+  }
+  document.getElementById('center-output').innerHTML = `
+    <div class="code-grid">
+      <div><div class="region-label">C++ syntax</div><div class="code-box"><span class="label">what you write</span>${code(statement)}</div></div>
+      <div><div class="region-label">Conceptual rewrite</div><div class="code-box"><span class="label">what it behaves like</span>${code(call)}</div></div>
+    </div>
+    <div class="region-label">Operands and return value</div>
+    <div class="viz-stage"><div class="flow">
+      ${objectCard('a','left operand / this',fracHtml(state.a))}
+      <div class="arrow">${esc(state.operator)}</div>
+      ${objectCard('b','right operand / RHS',fracHtml(state.b))}
+      <div class="arrow">=</div>
+      ${resCard}
+    </div>
+    <div class="mapping">
+      <div class="map-card this"><div class="map-label">hidden object</div><div class="map-val">a becomes this</div></div>
+      <div class="map-card"><div class="map-label">parameter</div><div class="map-val">b becomes RHS</div></div>
+      <div class="map-card return"><div class="map-label">${esc(opName)} returns</div><div class="map-val">${returnsBool ? 'bool' : 'Fraction'}</div></div>
+      <div class="map-card"><div class="map-label">calculation</div><div class="map-val">${esc(math)}</div></div>
+    </div></div>`;
+  document.getElementById('right-output').innerHTML = `
+    <div class="side-title">Fraction class</div>
+    <div class="code-box" style="min-height:0">${code(fractionMemberCode())}</div>
+    <div class="side-title">Teaching note</div>
+    <div class="note"><strong>Operator syntax is syntax sugar.</strong><br>The expression <code>a ${esc(state.operator)} b</code> calls an overload function. In a member overload, the left operand is hidden as <code>this</code>, and the right operand is the explicit <code>rhs</code> parameter.</div>
+    <div class="return-card"><strong>${esc(opName)}</strong> returns <strong>${returnsBool ? 'bool' : 'Fraction'}</strong>.<br>${returnsBool ? 'Comparison operators answer a question; they do not create a new Fraction.' : 'Arithmetic operators usually create and return a new value, leaving a and b unchanged.'}</div>`;
+}
+function renderMember(){
+  document.getElementById('frac-warning').classList.remove('show');
+  document.getElementById('center-output').innerHTML = `
+    <div class="compare">
+      <div class="compare-card"><div class="compare-head">Member overload</div><div class="compare-body">
+        <div class="code-box">${code('class Fraction {\nprivate:\n    int numerator;\n    int denominator;\n\npublic:\n    Fraction operator+(const Fraction& rhs) const;\n};\n\nFraction Fraction::operator+(const Fraction& rhs) const {\n    return Fraction(numerator * rhs.denominator + rhs.numerator * denominator,\n                    denominator * rhs.denominator);\n}')}</div>
+        <div class="call-pill">${code('Fraction c = a.operator+(b);')}</div>
+        <div class="param-row"><div class="param-name">hidden this</div><div class="param-box">a</div></div>
+        <div class="param-row"><div class="param-name">rhs / RHS</div><div class="param-box">b</div></div>
+      </div></div>
+      <div class="compare-card"><div class="compare-head">Non-member overload</div><div class="compare-body">
+        <div class="code-box">${code('class Fraction {\nprivate:\n    int numerator;\n    int denominator;\n};\n\nFraction operator+(const Fraction& left,\n                   const Fraction& right) {\n    return Fraction(left.getNumerator() * right.getDenominator() +\n                    right.getNumerator() * left.getDenominator(),\n                    left.getDenominator() * right.getDenominator());\n}')}</div>
+        <div class="call-pill">${code('Fraction c = operator+(a, b);')}</div>
+        <div class="param-row"><div class="param-name">left</div><div class="param-box">a</div></div>
+        <div class="param-row"><div class="param-name">right</div><div class="param-box">b</div></div>
+      </div></div>
+    </div>
+    <div style="height:18px"></div>
+    <div class="viz-stage">
+      <div class="region-label">Same expression, different function shape</div>
+      <div class="flow">
+        ${objectCard('a','left operand',fracHtml(state.a))}
+        <div class="arrow">+</div>
+        ${objectCard('b','right operand',fracHtml(state.b))}
+        <div class="arrow">calls</div>
+        <div class="obj-card"><div class="obj-head"><span class="obj-name">operator+</span><span class="badge">function</span></div><div class="fraction" style="font-family:var(--code);font-size:13px;line-height:1.6;text-align:center">member: this + RHS<br>non-member: left + right</div><div class="value-label">operator function</div></div>
+      </div>
+    </div>`;
+  document.getElementById('right-output').innerHTML = `
+    <div class="side-title">Teaching note</div>
+    <div class="note good"><strong>Member overloads</strong> are natural when the left operand is your class.</div>
+    <div class="note"><strong>Non-member overloads</strong> are useful when both operands should be treated symmetrically, or when the left operand is not your class.</div>
+    <div class="return-card"><strong>Key difference:</strong><br>Member form has a hidden <code>this</code> pointer. Non-member form has no hidden object; every operand is an explicit parameter.</div>`;
+}
+function renderStream(){
+  document.getElementById('frac-warning').classList.remove('show');
+  const isOut = state.streamKind === 'out';
+  const syntax = isOut ? 'cout << a;' : 'cin >> a;';
+  const call = isOut ? 'operator<<(cout, a);' : 'operator>>(cin, a);';
+  const sig = isOut ? 'std::ostream& operator<<(std::ostream& out, const Fraction& f);' : 'std::istream& operator>>(std::istream& in, Fraction& f);';
+  const useFriend = state.access === 'friend';
+  document.getElementById('center-output').innerHTML = `
+    <div class="code-grid">
+      <div><div class="region-label">Stream syntax</div><div class="code-box"><span class="label">what you write</span>${code(syntax)}</div></div>
+      <div><div class="region-label">Conceptual call</div><div class="code-box"><span class="label">non-member function</span>${code(call)}\n\n${code(sig)}</div></div>
+    </div>
+    <div class="viz-stage">
+      <div class="region-label">Why stream operators are non-member functions</div>
+      <div class="flow">
+        <div class="obj-card"><div class="obj-head"><span class="obj-name">${isOut ? 'cout' : 'cin'}</span><span class="badge">left operand</span></div><div class="fraction" style="font-family:var(--code);font-size:13px">${isOut ? 'std::ostream' : 'std::istream'}</div><div class="value-label">belongs to the standard library</div></div>
+        <div class="arrow">${isOut ? '&lt;&lt;' : '&gt;&gt;'}</div>
+        ${objectCard('a','right operand',fracHtml(state.a))}
+        <div class="arrow">=</div>
+        <div class="obj-card"><div class="obj-head"><span class="obj-name">operator${isOut ? '&lt;&lt;' : '&gt;&gt;'}</span><span class="badge">non-member</span></div><div class="fraction" style="font-family:var(--code);font-size:13px;text-align:center">${isOut ? 'out, f' : 'in, f'}</div><div class="value-label">both operands are parameters</div></div>
+      </div>
+    </div>
+    <div class="code-grid">
+      <div><div class="region-label">${useFriend ? 'Friend access' : (isOut ? 'Public getters' : 'Public setters')}</div><div class="code-box">${code(streamClassCode())}</div></div>
+      <div><div class="region-label">${isOut ? 'operator&lt;&lt;' : 'operator&gt;&gt;'} implementation</div><div class="code-box">${code(streamImplCode())}</div></div>
+    </div>
+    <div class="viz-stage">
+      <div class="region-label">Why return ${isOut ? 'std::ostream&amp;' : 'std::istream&amp;'}?</div>
+      <div class="code-box">${code(isOut ? 'cout << a << b;\n\noperator<<(operator<<(cout, a), b);' : 'cin >> a >> b;\n\noperator>>(operator>>(cin, a), b);')}</div>
+      <div class="chain" style="margin-top:12px">
+        <div class="chain-step"><span class="step-num">1</span><span>${isOut ? 'cout enters operator&lt;&lt; with a' : 'cin enters operator&gt;&gt; with a'}</span></div>
+        <div class="chain-step"><span class="step-num">2</span><span>the same ${isOut ? 'cout' : 'cin'} stream is returned by reference</span></div>
+        <div class="chain-step"><span class="step-num">3</span><span>that returned ${isOut ? 'cout' : 'cin'} becomes the left operand for the next ${isOut ? '&lt;&lt;' : '&gt;&gt;'}</span></div>
+      </div>
+    </div>`;
+  document.getElementById('right-output').innerHTML = `
+    <div class="side-title">Teaching note</div>
+    <div class="note"><strong>Streams are on the left.</strong><br>Because <code>${isOut ? 'cout' : 'cin'}</code> is the left operand, this overload is a non-member function. We cannot add member functions to <code>${isOut ? 'std::ostream' : 'std::istream'}</code>.</div>
+    <div class="note good"><strong>friend is optional, not required.</strong><br>Stream operators are usually non-member functions. They only need to be friend functions if they need direct access to private data. Public getters/setters can avoid friend.</div>
+    <div class="return-card"><strong>Selected access style:</strong> ${useFriend ? 'friend access' : (isOut ? 'public getters' : 'public setters')}<br>${useFriend ? 'The function can read or write private fields directly.' : 'The function uses the public interface, so friend is not needed.'}</div>`;
+}
+function renderInc(){
+  document.getElementById('frac-warning').classList.remove('show');
+  const x = state.counter;
+  const prefix = state.incKind === 'prefix';
+  document.getElementById('center-output').innerHTML = `
+    <div class="code-grid">
+      <div><div class="region-label">Syntax and signature</div><div class="code-box">${code(prefix ? '++x;\n\nCounter& operator++();     // prefix' : 'x++;\n\nCounter operator++(int);   // postfix')}</div></div>
+      <div><div class="region-label">Implementation idea</div><div class="code-box">${code(prefix ? 'Counter& operator++() {\n    value++;\n    return *this;\n}' : 'Counter operator++(int) {\n    Counter old = *this;\n    value++;\n    return old;\n}')}</div></div>
+    </div>
+    <div class="viz-stage">
+      <div class="region-label">${prefix ? 'Prefix behavior' : 'Postfix behavior'}</div>
+      <div class="counter-stage">
+        <div class="counter-card"><div class="counter-title">before</div><div class="counter-val">x = ${esc(x)}</div></div>
+        <div class="counter-card"><div class="counter-title">${prefix ? 'after increment' : 'old copy saved first'}</div><div class="counter-val">${prefix ? `x = ${esc(x+1)}` : `old = ${esc(x)}`}</div></div>
+        <div class="counter-card"><div class="counter-title">${prefix ? 'returned value' : 'x becomes'}</div><div class="counter-val">${prefix ? `x = ${esc(x+1)}` : `x = ${esc(x+1)}`}</div></div>
+        <div class="counter-card"><div class="counter-title">${prefix ? 'return type' : 'returned value'}</div><div class="counter-val" style="font-size:22px">${prefix ? 'Counter&' : `old = ${esc(x)}`}</div></div>
+      </div>
+    </div>`;
+  document.getElementById('right-output').innerHTML = `
+    <div class="side-title">Counter class</div>
+    <div class="code-box" style="min-height:0">${code(counterClassCode())}</div>
+    <div class="side-title">Teaching note</div>
+    <div class="note"><strong>${prefix ? 'Prefix ++' : 'Postfix ++'}</strong><br>${prefix ? 'Increment the object, then return the updated object by reference.' : 'Save an old copy, increment the object, then return the old copy by value.'}</div>
+    <div class="return-card"><strong>The dummy int matters:</strong><br><code>operator++(int)</code> uses an unused <code>int</code> parameter only so C++ can distinguish postfix from prefix.</div>`;
+}
+function render(){
+  if(state.tab === 'binary') renderBinary();
+  if(state.tab === 'member') renderMember();
+  if(state.tab === 'stream') renderStream();
+  if(state.tab === 'inc') renderInc();
+}
+
+syncFraction();
+render();
+</script>
+</body>
+</html>
