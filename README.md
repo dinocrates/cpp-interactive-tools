@@ -2,7 +2,7 @@
 
 Interactive browser-based visualizers for C++ courses.
 
-This repo contains small, self-contained teaching tools designed to help students see what C++ code is doing: stack frames, pointers and references, objects, vectors, strings, enums, and control flow. Each tool runs entirely in the browser with no install step and no data sent to a server.
+This repo contains small, self-contained teaching tools designed to help students see what C++ code is doing: stack frames, pointers and references, objects, vectors, strings, enums, lambda functions, and control flow. Each tool runs entirely in the browser with no install step and no data sent to a server.
 
 These pages are built especially for embedding into Instructure Canvas lecture pages, assignments, modules, and course notes.
 
@@ -17,6 +17,7 @@ These pages are built especially for embedding into Instructure Canvas lecture p
 - Flowchart Visualizer
 - Operator Overload Explorer
 - Who Has the Key? Friend Access
+- Lambda Functions Lab
 
 ## Canvas Embeds
 
